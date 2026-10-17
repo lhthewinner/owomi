@@ -1,6 +1,6 @@
 # Cahier des charges — Application de gestion de budget personnel
 
-Version 1.1 · Mise à jour avec prise en compte du mode hors ligne MVP · @Lucien
+Version 1.2 · Extension du périmètre avec Vues Semestre/Année, Multi-devises étendu, Dépenses récurrentes ajustables et Espace Administrateur · @Lucien
 
 ---
 
@@ -22,15 +22,15 @@ L'application permet à n'importe qui de noter chaque dépense en quelques secon
 
 ## 2. Utilisateurs cibles et rôles
 
-L'application s'adresse à toute personne qui veut suivre son argent sans outil compliqué : salariés, étudiants, indépendants, avec un salaire mensuel et des gains occasionnels. Deux rôles suffisent pour le MVP.
+L'application s'adresse à toute personne qui veut suivre son argent sans outil compliqué : salariés, étudiants, indépendants, avec un salaire mensuel et des gains occasionnels. Trois rôles sont prévus.
 
 | Rôle | Description | Droits | Phase |
 | --- | --- | --- | --- |
-| **Visiteur** | Non connecté | Voir l'accueil, s'inscrire ou se connecter avec une adresse email valide et un mot de passe | MVP |
-| **Utilisateur** | Connecté | Gérer ses propres dépenses, revenus, prêts et bilans ; modifier son profil ; supprimer son compte | MVP |
-| **Administrateur** | Gère la plateforme | Statistiques anonymes et gestion des comptes (activation, suspension et bannissement d'un utilisateur) ; voit le nom des utilisateurs ; aucun accès à leurs données financières | V2 |
+| **Visiteur** | Non connecté | Voir l'accueil, s'inscrire ou se connecter avec une adresse email valide et un mot de passe | Phase 1 (MVP) |
+| **Utilisateur** | Connecté | Gérer ses propres dépenses, revenus, prêts et bilans ; modifier son profil ; supprimer son compte | Phase 1 (MVP) |
+| **Administrateur** | Gère la plateforme | Statistiques anonymes globales et modération des comptes (activation, suspension et bannissement d'un utilisateur) ; voit le nom et l'email des utilisateurs ; **aucun accès à leurs données financières** (montants et opérations strictement protégés par RLS) | Phase 1 (Enrichie) |
 
-**Changement par rapport à la version initiale.** Le rôle « Admin : peut tout voir » est retiré du MVP. L'administrateur de la V2 gère les comptes (activation, suspension, bannissement) et voit le nom des utilisateurs, mais pas leurs données financières : pour une application de finances personnelles, un accès complet crée un risque de confiance et de conformité RGPD.
+**Sécurité et confidentialité du rôle Administrateur.** L'administrateur gère les comptes (activation, suspension, bannissement) et voit le nom et l'email des utilisateurs, mais **jamais** leurs données financières : pour une application de finances personnelles, un accès complet crée un risque de confiance et viole le RGPD.
 
 ---
 
@@ -44,6 +44,7 @@ Une dépense est « imprévue » par défaut : seule la création préalable d'u
 | **Autres revenus** | Argent gagné ponctuellement hors salaire (date, montant, source), saisi à part. |
 | **Prêt** | L'utilisateur peut enregistrer un prêt. Il est compté dans le solde, qui peut devenir négatif : l'application ne bloque jamais une opération parce que le solde serait négatif. Sens du prêt à confirmer (voir décisions ouvertes). |
 | **Dépense prévue** | On peut prévoir une dépense au début du mois, de la semaine ou du jour. Elle est créée à l'avance avec un nom, un montant prévu, une catégorie et une période (jour, semaine ou mois). |
+| **Dépense récurrente** | Une dépense prévue peut être marquée comme récurrente. Elle se reconduit automatiquement à chaque période (ex: chaque mois pour le loyer), avec possibilité pour l'utilisateur de modifier ou d'ajuster son montant en début ou en fin de mois. |
 | **Dépense imprévue** | Toute dépense saisie sans être rattachée à une dépense prévue. Aucune case à cocher. |
 | **Régler une dépense prévue en plusieurs fois** | Une dépense prévue n'est pas forcément soldée d'un seul coup. Exemple : 10 000 F prévus pour le transport dans le mois ; l'utilisateur saisit 500 F un lundi, 2 000 F le lendemain, et chaque montant se déduit des 10 000 F prévus. Chaque règlement est une dépense rattachée, à sa date. Le même principe vaut pour toutes les dépenses prévues. |
 | **Reste à dépenser** | Montant prévu moins la somme des règlements rattachés. Supprimer un règlement le remet dans le reste. |
@@ -51,7 +52,7 @@ Une dépense est « imprévue » par défaut : seule la création préalable d'u
 | **Date d'une opération** | Date du jour par défaut, modifiable : on peut saisir le soir les achats de la journée. |
 | **Total dépensé** | Dépenses rattachées à une dépense prévue + dépenses imprévues de la période. |
 | **Solde du jour ou de la semaine** | Autres revenus − total dépensé, prêts compris (voir décisions). Le salaire est exclu. |
-| **Économies du mois** | Salaire + autres revenus − total dépensé, prêts compris. Peut être négatif. |
+| **Économies du mois, semestre ou année** | Salaire + autres revenus − total dépensé, prêts compris. Peut être négatif. |
 | **Semaine** | Du lundi au dimanche. |
 | **Fin de journée** | À 00h, selon le fuseau de l'utilisateur, le bilan du jour est arrêté et reste consultable. Le bilan peut aussi être demandé à tout moment : il est calculé en direct. |
 
@@ -59,16 +60,14 @@ Une dépense est « imprévue » par défaut : seule la création préalable d'u
 
 ## 4. Périmètre
 
-Le MVP livre la boucle complète : s'inscrire, saisir, consulter le bilan, retrouver l'historique ; tout le reste est repoussé pour tenir un délai court.
+Le projet se structure en phases claires pour livrer un outil complet tout en gardant une exécution maîtrisée.
 
 | Phase | Contenu |
 | --- | --- |
-| **MVP** | Inscription et connexion par email et mot de passe, mot de passe oublié, déconnexion, suppression de compte ; tableau de bord (reste du mois, dépensé et gagné du jour et de la semaine, dernières opérations) ; saisie rapide d'une dépense ; dépenses prévues par jour, semaine ou mois, réglées en plusieurs fois ; salaire modifiable et autres revenus ; prêts ; bilan jour, semaine, mois (solde pouvant être négatif) ; historique filtrable ; profil (devise, thème) ; saisie hors ligne simple (enregistrement sur l’appareil, envoi automatique au retour du réseau). |
+| **Phase 1 (Actuelle & Enrichie)** | **Cœur MVP** : Inscription et connexion par email et mot de passe, mot de passe oublié, déconnexion, suppression de compte ; tableau de bord (reste du mois, dépensé et gagné du jour et de la semaine, dernières opérations) ; saisie rapide d'une dépense ; dépenses prévues par jour, semaine ou mois, réglées en plusieurs fois ; salaire modifiable et autres revenus ; prêts ; bilan jour, semaine, mois ; historique filtrable ; profil (devise, thème) ; saisie hors ligne PWA.<br>**Extensions actuelles validées** :<br>1. **Vues Semestre (6 mois) et Année (1 an)** dans le Bilan.<br>2. **Choix de devises étendu** dans le profil (FCFA, EUR, USD, CAD, GBP, GNF, MAD).<br>3. **Dépenses récurrentes & Reconduction automatique** avec ajustement possible du montant en début ou fin de mois.<br>4. **Espace Administrateur sécurisé** : gestion des comptes (activation, suspension, bannissement) et statistiques globales anonymes (sans accès aux finances des utilisateurs). |
 | **V1.1** | Notification de fin de journée ; rappel « rien saisi aujourd'hui » ; export PDF du bilan ; synchronisation complète entre plusieurs appareils et gestion des conflits ; historique des salaires ; suivi des remboursements de prêts. |
-| **V2** | Assistant IA de saisie en langage naturel, à l'écrit et à la voix ; connexion Google en option ; budgets et alertes ; opérations récurrentes et reconduction automatique des dépenses prévues ; multi-devises ; rôle Administrateur (gestion et bannissement des comptes, noms des utilisateurs, statistiques anonymes) ; rapports automatiques par email ; vues semestre et année ; import CSV ; application mobile native. |
+| **V2** | Assistant IA de saisie en langage naturel, à l'écrit et à la voix ; connexion Google en option ; budgets plafonds et alertes de dépassement par catégorie ; rapports automatiques par email ; import CSV / Excel ; application mobile native (Play Store & App Store). |
 | **Hors périmètre** | Connexion automatique aux comptes bancaires ; paiement ou transfert d'argent ; conseil financier personnalisé ; budgets partagés entre plusieurs personnes. |
-
-Le « semestriel » du pitch initial est remplacé par la vue Mois avec historique consultable ; le semestre et l'année passent en V2.
 
 ---
 
@@ -95,8 +94,12 @@ Le MVP compte 21 stories, chacune avec des critères d'acceptation testables ; l
 | **B1** | En tant qu'utilisateur, je vois mon bilan du jour, de la semaine ou du mois. | Affiche total dépensé, prévu et imprévu, gagné hors salaire, solde ou économies (négatifs possibles), détail par catégorie ; changement de période en moins d'une seconde ; état vide soigné sans donnée. |
 | **B2** | En tant qu'utilisateur, je demande mon bilan à tout moment. | Le bilan inclut les opérations saisies à l'instant. |
 | **B3** | En tant qu'utilisateur, je retrouve le bilan d'un jour passé. | Le bilan correspond aux opérations datées de ce jour ; une modification ultérieure d'une opération le met à jour. |
+| **B4** | En tant qu'utilisateur, je consulte mon bilan sur 6 mois (semestre) ou 1 an (année). | Sélecteurs Semestre et Année disponibles ; calcul immédiat des totaux dépensé, gagné hors salaire, cumul des salaires et économies ; répartition par catégorie sur la période étendue. |
 | **H1** | En tant qu'utilisateur, je consulte mon historique. | Liste groupée par jour ; filtres Tout, Dépenses, Revenus ; filtre par période et catégorie. |
-| **P1** | En tant qu'utilisateur, je choisis ma devise et mon thème. | Devise appliquée à tous les montants ; thème clair ou sombre mémorisé. |
+| **P1** | En tant qu'utilisateur, je choisis mon thème (clair ou sombre). | Thème clair ou sombre mémorisé sur l'appareil et appliqué immédiatement. |
+| **P2** | En tant qu'utilisateur, je choisis ma devise parmi une sélection internationale. | Choix parmi FCFA, EUR, USD, CAD, GBP, GNF, MAD ; formatage instantané des montants avec symbole approprié dans toute l'interface sans rechargement. |
+| **D5** | En tant qu'utilisateur, je définis une dépense prévue comme récurrente et j'ajuste son montant lors de sa reconduction. | Option « Récurrente » lors de la création d'une prévue mensuelle ; reconduction automatique à chaque début de période ; possibilité pour l'utilisateur de modifier et d'ajuster le montant au début ou à la fin de chaque mois. |
+| **AD1** | En tant qu'administrateur, j'accède à un espace sécurisé de modération et de suivi. | Accès strictement réservé aux utilisateurs ayant le rôle `admin` ; consultation de la liste des comptes inscrits (nom, prénom, email, date d'inscription, statut) ; actions de modération (activer, suspendre, bannir) ; statistiques globales anonymes ; aucun accès aux montants financiers des utilisateurs (protection RLS stricte). |
 | **G1** | En tant que visiteur, je comprends la promesse de l'application. | L'accueil présente la promesse en une phrase, un aperçu de bilan et les boutons Créer un compte et Se connecter. |
 | **O1** | En tant qu’utilisateur, je saisis mes opérations sans connexion. | L’application s’ouvre sans internet une fois installée ; je peux ajouter, modifier et supprimer dépenses, revenus, prêts et règlements ; je consulte le tableau de bord, le bilan et l’historique avec les données présentes ; ma session reste ouverte hors ligne. |
 | **O2** | En tant qu’utilisateur, mes opérations hors ligne sont envoyées automatiquement au retour du réseau. | Un bandeau indique « Hors ligne » et le nombre d’opérations en attente ; à la reconnexion, tout est envoyé sans action de ma part ; un message confirme la synchronisation ; en cas d’échec, les opérations restent en attente et rien n’est perdu. |
@@ -105,7 +108,7 @@ Le MVP compte 21 stories, chacune avec des critères d'acceptation testables ; l
 
 ## 6. Écrans et navigation
 
-Dix écrans couvrent le MVP. La maquette interactive actuelle (fichier `maquette-budget.html`) en montre déjà huit ; elle doit être mise à jour pour la connexion par email, le règlement en plusieurs fois et les prêts. La navigation mobile tient en une barre du bas : Accueil, Bilan, bouton + central, Historique, Budget.
+Le périmètre couvre les écrans essentiels de l'application, organisés pour un usage mobile fluide et un affichage responsive sur ordinateur.
 
 | Écran | Rôle | Contenu clé |
 | --- | --- | --- |
@@ -114,27 +117,28 @@ Dix écrans couvrent le MVP. La maquette interactive actuelle (fichier `maquette
 | **Mot de passe oublié** | Visiteur | Saisie de l'email, envoi du lien, nouveau mot de passe |
 | **Dashboard** | Utilisateur | Reste du mois (négatif possible), dépensé et gagné du jour et de la semaine, dernières opérations |
 | **Ajout rapide** | Utilisateur | Fenêtre depuis le bas : clavier numérique, catégories, choix Dépense, Revenu, Prévue ou Prêt |
-| **Bilan** | Utilisateur | Sélecteur Jour, Semaine, Mois ; trois chiffres clés ; prévu contre imprévu ; graphique ; catégories ; bouton de rapport PDF (indiquant sa disponibilité en V1.1) |
+| **Bilan** | Utilisateur | Sélecteur Jour, Semaine, Mois, **Semestre (6 mois)**, **Année (1 an)** ; trois chiffres clés ; prévu contre imprévu ; graphique ; catégories ; bouton de rapport |
 | **Historique** | Utilisateur | Opérations groupées par jour, filtrables, suppression |
-| **Budget : dépenses prévues** | Utilisateur | Filtre jour, semaine, mois ; par dépense prévue : prévu, dépensé, reste, progression, bouton Ajouter un règlement |
+| **Budget : dépenses prévues** | Utilisateur | Filtre jour, semaine, mois ; gestion des dépenses prévues récurrentes (loyer, abonnements) avec ajustement de montant ; prévu, dépensé, reste, progression, bouton Ajouter un règlement |
 | **Budget : revenus et prêts** | Utilisateur | Salaire mensuel modifiable en haut, autres revenus, prêts |
-| **Profil** | Utilisateur | Devise, thème, fuseau, déconnexion, suppression du compte |
+| **Profil** | Utilisateur | Sélecteur de devise étendu (FCFA, EUR, USD, CAD, GBP, GNF, MAD), thème, code PIN de sécurité, déconnexion, suppression du compte |
+| **Espace Administrateur** | Administrateur | Tableau de bord réservé aux administrateurs : liste des utilisateurs inscrits, statut (actif, suspendu, banni), statistiques anonymes d'usage. |
 | **Bandeau d’état de connexion** | Utilisateur | Visible sur tous les écrans connectés : Hors ligne, X opérations en attente, Synchronisé. |
 
 ---
 
 ## 7. Modèle de données
 
-Six entités suffisent au MVP. Le caractère « prévu » ou « imprévu » d'une dépense n'est pas stocké : il se déduit de la présence d'un lien vers une dépense prévue, et plusieurs dépenses peuvent être liées à la même prévue.
+Le modèle de données assure l'intégrité et la séparation stricte des informations.
 
 | Entité | Champs principaux | Remarque |
 | --- | --- | --- |
-| **Utilisateur** | id, nom, prénom, email, mot de passe haché, email vérifié, rôle, devise, fuseau horaire, thème, salaire mensuel, date de création | Un seul salaire en MVP ; l'historique des salaires arrive en V1.1 |
+| **Utilisateur / Profil** | id, nom, prénom, email, rôle (`user` ou `admin`), statut (`active`, `suspended`, `banned`), devise, fuseau horaire, thème, salaire mensuel, date de création | Le rôle `admin` donne accès à la modération sans jamais donner accès aux données financières d'autrui |
 | **Catégorie** | id, nom, icône, utilisateur (vide si catégorie par défaut) | Sept catégories par défaut : Alimentation, Transport, Logement, Santé, Loisirs, Factures, Autre |
-| **Dépense prévue** | id, utilisateur, nom, montant prévu, catégorie, période (jour, semaine ou mois), date de début, identifiant local, date de dernière modification, statut de synchronisation (en attente ou envoyée) | Dépensé, reste et statut sont calculés à partir des dépenses rattachées |
+| **Dépense prévue** | id, utilisateur, nom, montant prévu, catégorie, période (jour, semaine ou mois), date de début, est_recurrente (booléen), identifiant local, date de dernière modification, statut de synchronisation | Si récurrente, reconduction automatique avec ajustement possible du montant |
 | **Dépense** | id, utilisateur, montant, catégorie, date, note, dépense prévue (facultatif), identifiant local, date de dernière modification, statut de synchronisation (en attente ou envoyée) | Lien vide = imprévue |
 | **Revenu hors salaire** | id, utilisateur, montant, source, date, identifiant local, date de dernière modification, statut de synchronisation (en attente ou envoyée) | Le salaire n'y figure pas |
-| **Prêt** | id, utilisateur, sens, montant, personne ou organisme, date, note, identifiant local, date de dernière modification, statut de synchronisation (en attente ou envoyée) | Sens à confirmer : argent prêté ou emprunté |
+| **Prêt** | id, utilisateur, sens, montant, personne ou organisme, date, note, identifiant local, date de dernière modification, statut de synchronisation (en attente ou envoyée) | Sens : argent prêté ou emprunté |
 
 Les montants sont stockés en nombres entiers dans la plus petite unité de la devise, pour éviter les erreurs d'arrondi. Un mot de passe n'est jamais stocké en clair. Chaque ligne appartient à un seul utilisateur et n'est jamais lisible par un autre.
 
