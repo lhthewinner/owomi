@@ -20,7 +20,7 @@ export type PeriodType = "day" | "week" | "month";
 export type LoanDirection = "borrowed" | "given";
 export type ThemeType = "light" | "dark" | "system";
 
-export interface Database {
+export type Database = {
   public: {
     Tables: {
       profiles: {
@@ -56,6 +56,7 @@ export interface Database {
           monthly_salary?: number;
           updated_at?: string;
         };
+        Relationships: [];
       };
       categories: {
         Row: {
@@ -78,6 +79,7 @@ export interface Database {
           name?: string;
           icon?: string;
         };
+        Relationships: [];
       };
       planned_expenses: {
         Row: {
@@ -118,6 +120,7 @@ export interface Database {
           last_modified_at?: string;
           sync_status?: SyncStatus;
         };
+        Relationships: [];
       };
       expenses: {
         Row: {
@@ -158,6 +161,7 @@ export interface Database {
           last_modified_at?: string;
           sync_status?: SyncStatus;
         };
+        Relationships: [];
       };
       incomes: {
         Row: {
@@ -192,6 +196,7 @@ export interface Database {
           last_modified_at?: string;
           sync_status?: SyncStatus;
         };
+        Relationships: [];
       };
       loans: {
         Row: {
@@ -232,7 +237,24 @@ export interface Database {
           last_modified_at?: string;
           sync_status?: SyncStatus;
         };
+        Relationships: [];
+      };
+      [key: string]: {
+        Row: Record<string, unknown>;
+        Insert: Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: {
+          foreignKeyName: string;
+          columns: string[];
+          isOneToOne?: boolean;
+          referencedRelation: string;
+          referencedColumns: string[];
+        }[];
       };
     };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
-}
+};

@@ -1,21 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Wallet,
-  Sun,
-  Moon,
-  ArrowRight,
-  WifiOff,
-  LogOut,
-  Trash2,
-  CheckCircle2,
-} from "lucide-react";
+import { Wallet, Sun, Moon, ArrowRight, WifiOff } from "lucide-react";
 import { content } from "@/content/fr";
 import { formatAmount } from "@/lib/utils/currency";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { ForgotPasswordCard } from "@/components/auth/ForgotPasswordCard";
-import { DeleteAccountModal } from "@/components/profile/DeleteAccountModal";
+import { DashboardView } from "@/components/dashboard/DashboardView";
+import { BottomNav, type NavTab } from "@/components/navigation/BottomNav";
+import {
+  QuickAddSheet,
+  type OperationMode,
+} from "@/components/operations/QuickAddSheet";
+import { IncomeAndLoansView } from "@/components/operations/IncomeAndLoansView";
+import { ProfileView } from "@/components/profile/ProfileView";
+import { Toast } from "@/components/ui/Toast";
 import { createClient } from "@/lib/supabase/client";
 import { signOutAction } from "@/lib/auth/actions";
 import type { User } from "@supabase/supabase-js";
@@ -27,7 +26,13 @@ export default function HomePage() {
   const [view, setView] = useState<ActiveView>("welcome");
   const [authTab, setAuthTab] = useState<"signup" | "login">("signup");
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  // Navigation dans l'espace connecté
+  const [activeTab, setActiveTab] = useState<NavTab | "profile">("dashboard");
+  const [isAddOpen, setIsAddOpen] = useState<boolean>(false);
+  const [addMode, setAddMode] = useState<OperationMode>("exp");
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
 
   useEffect(() => {
     // Initialisation du thème (clair / sombre)
@@ -73,16 +78,24 @@ export default function HomePage() {
     await signOutAction();
     setCurrentUser(null);
     setView("welcome");
+    setActiveTab("dashboard");
+    setToastMessage("Vous êtes déconnecté.");
+  };
+
+  const handleDeletedAccount = () => {
+    setCurrentUser(null);
+    setView("welcome");
+    setActiveTab("dashboard");
+    setToastMessage(content.auth.success.accountDeleted);
   };
 
   return (
     <main className="min-h-screen bg-slate-100 dark:bg-[#05080F] flex items-center justify-center p-0 sm:p-4">
       {/* Conteneur mobile centré (390px sur bureau, plein écran sur mobile) */}
-      <div className="w-full sm:w-[390px] min-h-screen sm:min-h-[820px] sm:max-h-[96vh] bg-background sm:border-[10px] sm:border-slate-900 dark:sm:border-slate-950 sm:rounded-[38px] sm:shadow-2xl overflow-y-auto flex flex-col justify-between p-6 sm:p-7 relative transition-colors duration-200">
-
+      <div className="w-full sm:w-[390px] min-h-screen sm:min-h-[820px] sm:max-h-[96vh] bg-background sm:border-[10px] sm:border-slate-900 dark:sm:border-slate-950 sm:rounded-[38px] sm:shadow-2xl overflow-y-auto flex flex-col justify-between relative transition-colors duration-200">
         {/* 1. ÉCRAN ACCUEIL VISITEUR */}
         {view === "welcome" && (
-          <div className="flex flex-col h-full justify-between animate-fadeIn">
+          <div className="flex flex-col h-full justify-between p-6 sm:p-7 animate-fadeIn">
             {/* En-tête */}
             <div className="flex items-center justify-between pt-2">
               <div className="flex items-center gap-2.5 font-extrabold text-xl tracking-tight text-foreground">
@@ -179,97 +192,151 @@ export default function HomePage() {
 
         {/* 2. ÉCRAN AUTHENTIFICATION (INSCRIPTION / CONNEXION) */}
         {view === "auth" && (
-          <AuthCard
-            initialTab={authTab}
-            onBack={() => setView("welcome")}
-            onGoForgot={() => setView("forgot")}
-            onSuccessLogin={() => setView("authenticated")}
-          />
+          <div className="p-6 sm:p-7">
+            <AuthCard
+              initialTab={authTab}
+              onBack={() => setView("welcome")}
+              onGoForgot={() => setView("forgot")}
+              onSuccessLogin={() => setView("authenticated")}
+            />
+          </div>
         )}
 
         {/* 3. ÉCRAN MOT DE PASSE OUBLIÉ */}
         {view === "forgot" && (
-          <ForgotPasswordCard
-            onBack={() => {
-              setAuthTab("login");
-              setView("auth");
-            }}
-          />
-        )}
-
-        {/* 4. ÉCRAN CONNECTÉ (DASHBOARD INITIAL / PROFIL POUR SE DÉCONNECTER OU SUPPRIMER LE COMPTE) */}
-        {view === "authenticated" && (
-          <div className="flex flex-col h-full justify-between animate-fadeIn">
-            <div>
-              {/* En-tête connecté */}
-              <div className="flex items-center justify-between pb-4 border-b border-line mb-6">
-                <div>
-                  <div className="text-xs font-semibold text-muted">
-                    {content.dashboard.greeting(
-                      currentUser?.user_metadata?.firstname ||
-                        currentUser?.email?.split("@")[0] ||
-                        "Utilisateur"
-                    )}
-                  </div>
-                  <div className="text-sm font-bold text-foreground truncate max-w-[200px]">
-                    {currentUser?.email}
-                  </div>
-                </div>
-                <button
-                  onClick={toggleTheme}
-                  aria-label={isDark ? "Passer en mode clair" : "Passer en mode sombre"}
-                  className="w-10 h-10 rounded-full bg-card shadow-sm border border-line flex items-center justify-center text-muted hover:text-foreground touch-target transition-colors"
-                >
-                  {isDark ? <Sun className="w-5 h-5 text-warn" /> : <Moon className="w-5 h-5" />}
-                </button>
-              </div>
-
-              {/* Statut de session sécurisée */}
-              <div className="bg-card rounded-2xl p-5 border border-line shadow-sm space-y-3 mb-6">
-                <div className="flex items-center gap-2 text-gain text-xs font-bold">
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Session sécurisée active</span>
-                </div>
-                <p className="text-xs text-muted leading-relaxed">
-                  Votre compte est authentifié. Les dépenses, revenus et calculs du bilan seront activés dans les lots suivants.
-                </p>
-              </div>
-            </div>
-
-            {/* Actions de session : Déconnexion et Suppression du compte */}
-            <div className="space-y-3 pt-4 border-t border-line">
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="w-full py-3.5 px-4 rounded-2xl bg-card border border-line text-foreground font-bold text-sm flex items-center justify-center gap-2 hover:bg-card-secondary touch-target transition-colors"
-              >
-                <LogOut className="w-4 h-4 text-muted" />
-                <span>Se déconnecter</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsDeleteModalOpen(true)}
-                className="w-full py-3 px-4 rounded-2xl text-danger hover:bg-danger/10 text-xs font-bold flex items-center justify-center gap-2 touch-target transition-colors"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>{content.auth.deleteAccount.button}</span>
-              </button>
-            </div>
-
-            {/* Modal de confirmation de suppression */}
-            <DeleteAccountModal
-              isOpen={isDeleteModalOpen}
-              onClose={() => setIsDeleteModalOpen(false)}
-              onDeleted={() => {
-                setIsDeleteModalOpen(false);
-                setCurrentUser(null);
-                setView("welcome");
+          <div className="p-6 sm:p-7">
+            <ForgotPasswordCard
+              onBack={() => {
+                setAuthTab("login");
+                setView("auth");
               }}
             />
           </div>
         )}
 
+        {/* 4. ÉCRAN CONNECTÉ AVEC ONGLETS */}
+        {view === "authenticated" && currentUser && (
+          <div className="flex flex-col h-full justify-between">
+            {/* Contenu de l'onglet actif */}
+            <div className="p-5 sm:p-6 flex-1">
+              {activeTab === "dashboard" && (
+                <DashboardView
+                  currentUser={currentUser}
+                  isDark={isDark}
+                  onToggleTheme={toggleTheme}
+                  onOpenAdd={() => {
+                    setAddMode("exp");
+                    setIsAddOpen(true);
+                  }}
+                  onGoToBilan={() => setActiveTab("bilan")}
+                  onGoToProfile={() => setActiveTab("profile")}
+                  onShowToast={(msg) => setToastMessage(msg)}
+                  refreshTrigger={refreshTrigger}
+                />
+              )}
+
+              {activeTab === "budget" && (
+                <IncomeAndLoansView
+                  onOpenAddIncome={() => {
+                    setAddMode("inc");
+                    setIsAddOpen(true);
+                  }}
+                  onOpenAddLoan={() => {
+                    setAddMode("loan");
+                    setIsAddOpen(true);
+                  }}
+                  onShowToast={(msg) => {
+                    setToastMessage(msg);
+                    setRefreshTrigger((t) => t + 1);
+                  }}
+                />
+              )}
+
+              {activeTab === "profile" && (
+                <ProfileView
+                  currentUser={currentUser}
+                  isDark={isDark}
+                  onToggleTheme={toggleTheme}
+                  onBack={() => setActiveTab("dashboard")}
+                  onLogout={handleLogout}
+                  onDeletedAccount={handleDeletedAccount}
+                />
+              )}
+
+              {activeTab === "bilan" && (
+                <div className="flex flex-col items-center justify-center min-h-[460px] text-center p-4 space-y-4 animate-fadeIn">
+                  <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+                    <Wallet className="w-7 h-7" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-extrabold text-foreground">
+                      Bilan complet (Lot 5)
+                    </h2>
+                    <p className="text-xs text-muted max-w-[260px] mx-auto mt-1 leading-relaxed">
+                      Le calcul du bilan direct (jour, semaine, mois) et l&apos;analyse prévu vs imprévu seront activés dans le Lot 5.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("dashboard")}
+                    className="py-2.5 px-4 rounded-xl bg-card border border-line text-xs font-bold text-foreground hover:bg-card-secondary touch-target transition-colors"
+                  >
+                    Retour au tableau de bord
+                  </button>
+                </div>
+              )}
+
+              {activeTab === "history" && (
+                <div className="flex flex-col items-center justify-center min-h-[460px] text-center p-4 space-y-4 animate-fadeIn">
+                  <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+                    <Wallet className="w-7 h-7" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-extrabold text-foreground">
+                      Historique détaillé (Lot 6)
+                    </h2>
+                    <p className="text-xs text-muted max-w-[260px] mx-auto mt-1 leading-relaxed">
+                      La vue groupée par jour avec filtres par catégorie et période sera activée dans le Lot 6.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("dashboard")}
+                    className="py-2.5 px-4 rounded-xl bg-card border border-line text-xs font-bold text-foreground hover:bg-card-secondary touch-target transition-colors"
+                  >
+                    Retour au tableau de bord
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Barre de navigation inférieure */}
+            {activeTab !== "profile" && (
+              <BottomNav
+                activeTab={activeTab}
+                onChangeTab={(tab) => setActiveTab(tab)}
+                onOpenAdd={() => {
+                  setAddMode("exp");
+                  setIsAddOpen(true);
+                }}
+              />
+            )}
+          </div>
+        )}
+
+        {/* 5. Feuille d'ajout rapide (QuickAddSheet) */}
+        <QuickAddSheet
+          isOpen={isAddOpen}
+          initialMode={addMode}
+          onClose={() => setIsAddOpen(false)}
+          onSuccess={(msg) => {
+            setToastMessage(msg);
+            setRefreshTrigger((t) => t + 1);
+          }}
+        />
+
+        {/* 6. Notification Toast */}
+        <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
       </div>
     </main>
   );
