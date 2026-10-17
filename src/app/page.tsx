@@ -12,7 +12,7 @@ import {
   QuickAddSheet,
   type OperationMode,
 } from "@/components/operations/QuickAddSheet";
-import { IncomeAndLoansView } from "@/components/operations/IncomeAndLoansView";
+import { BudgetView } from "@/components/operations/BudgetView";
 import { ProfileView } from "@/components/profile/ProfileView";
 import { Toast } from "@/components/ui/Toast";
 import { createClient } from "@/lib/supabase/client";
@@ -31,6 +31,7 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState<NavTab | "profile">("dashboard");
   const [isAddOpen, setIsAddOpen] = useState<boolean>(false);
   const [addMode, setAddMode] = useState<OperationMode>("exp");
+  const [payPlannedId, setPayPlannedId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
 
@@ -236,12 +237,19 @@ export default function HomePage() {
               )}
 
               {activeTab === "budget" && (
-                <IncomeAndLoansView
+                <BudgetView
+                  onOpenPayPlanned={(id) => {
+                    setPayPlannedId(id);
+                    setAddMode("exp");
+                    setIsAddOpen(true);
+                  }}
                   onOpenAddIncome={() => {
+                    setPayPlannedId(null);
                     setAddMode("inc");
                     setIsAddOpen(true);
                   }}
                   onOpenAddLoan={() => {
+                    setPayPlannedId(null);
                     setAddMode("loan");
                     setIsAddOpen(true);
                   }}
@@ -249,6 +257,7 @@ export default function HomePage() {
                     setToastMessage(msg);
                     setRefreshTrigger((t) => t + 1);
                   }}
+                  refreshTrigger={refreshTrigger}
                 />
               )}
 
@@ -316,6 +325,7 @@ export default function HomePage() {
                 activeTab={activeTab}
                 onChangeTab={(tab) => setActiveTab(tab)}
                 onOpenAdd={() => {
+                  setPayPlannedId(null);
                   setAddMode("exp");
                   setIsAddOpen(true);
                 }}
@@ -328,7 +338,11 @@ export default function HomePage() {
         <QuickAddSheet
           isOpen={isAddOpen}
           initialMode={addMode}
-          onClose={() => setIsAddOpen(false)}
+          initialPlannedExpenseId={payPlannedId}
+          onClose={() => {
+            setIsAddOpen(false);
+            setPayPlannedId(null);
+          }}
           onSuccess={(msg) => {
             setToastMessage(msg);
             setRefreshTrigger((t) => t + 1);

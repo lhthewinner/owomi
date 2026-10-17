@@ -10,12 +10,14 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
 } from "lucide-react";
+import { formatAmount } from "@/lib/utils/currency";
 import { DEFAULT_CATEGORIES } from "@/lib/constants/categories";
 import { getTodayDateString, generateLocalId } from "@/lib/utils/date";
 import {
   createExpenseAction,
   createIncomeAction,
   createLoanAction,
+  getActivePlannedExpensesAction,
 } from "@/lib/operations/actions";
 
 export type OperationMode = "exp" | "inc" | "loan";
@@ -23,6 +25,7 @@ export type OperationMode = "exp" | "inc" | "loan";
 interface QuickAddSheetProps {
   isOpen: boolean;
   initialMode?: OperationMode;
+  initialPlannedExpenseId?: string | null;
   currency?: string;
   userTimezone?: string;
   onClose: () => void;
@@ -32,6 +35,7 @@ interface QuickAddSheetProps {
 export function QuickAddSheet({
   isOpen,
   initialMode = "exp",
+  initialPlannedExpenseId = null,
   currency = "FCFA",
   userTimezone = "Africa/Porto-Novo",
   onClose,
@@ -40,6 +44,8 @@ export function QuickAddSheet({
   const [mode, setMode] = useState<OperationMode>(initialMode);
   const [amountStr, setAmountStr] = useState<string>("");
   const [selectedCat, setSelectedCat] = useState<string>("Alimentation");
+  const [selectedPlannedId, setSelectedPlannedId] = useState<string | null>(initialPlannedExpenseId);
+  const [plannedList, setPlannedList] = useState<Array<{ id: string; name: string; category: string; left: number }>>([]);
   const [loanDir, setLoanDir] = useState<"borrowed" | "given">("borrowed");
   const [counterpartOrSource, setCounterpartOrSource] = useState<string>("");
   const [date, setDate] = useState<string>(() => getTodayDateString(userTimezone));
@@ -47,13 +53,28 @@ export function QuickAddSheet({
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Synchronise le mode initial à l'ouverture
+  // Synchronise le mode initial et charge les dépenses prévues actives
   useEffect(() => {
     if (isOpen) {
       setMode(initialMode);
+      setSelectedPlannedId(initialPlannedExpenseId);
       setError(null);
+
+      // Chargement des dépenses prévues actives
+      getActivePlannedExpensesAction().then((res) => {
+        if (res.success && res.data) {
+          setPlannedList(res.data);
+          if (initialPlannedExpenseId) {
+            const found = res.data.find((p) => p.id === initialPlannedExpenseId);
+            if (found) {
+              setSelectedCat(found.category);
+              setMode("exp");
+            }
+          }
+        }
+      });
     }
-  }, [isOpen, initialMode]);
+  }, [isOpen, initialMode, initialPlannedExpenseId]);
 
   if (!isOpen) return null;
 
@@ -86,7 +107,7 @@ export function QuickAddSheet({
           category: selectedCat,
           date,
           note: counterpartOrSource.trim(),
-          plannedExpenseId: null, // Imprévue par défaut dans ce lot
+          plannedExpenseId: selectedPlannedId,
           localId,
         });
 
@@ -95,7 +116,11 @@ export function QuickAddSheet({
           return;
         }
 
-        onSuccess("✓ Dépense enregistrée (imprévue)");
+        onSuccess(
+          selectedPlannedId
+            ? "✓ Règlement enregistré sur la dépense prévue"
+            : "✓ Dépense enregistrée (imprévue)"
+        );
       } else if (mode === "inc") {
         const res = await createIncomeAction({
           amount,
@@ -239,28 +264,54 @@ export function QuickAddSheet({
 
         {/* OPTIONS SELON LE MODE */}
         <div className="space-y-2.5 my-2">
-          {/* Mode Dépense : Chips Catégories */}
+          {/* Mode Dépense : Chips Catégories et Sélection Dépense Prévue */}
           {mode === "exp" && (
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-              {DEFAULT_CATEGORIES.map((cat) => {
-                const IconComponent = cat.icon;
-                const isSelected = selectedCat === cat.name;
-                return (
-                  <button
-                    key={cat.name}
-                    type="button"
-                    onClick={() => setSelectedCat(cat.name)}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border touch-target ${
-                      isSelected
-                        ? "bg-primary/15 border-primary text-primary"
-                        : "bg-card border-line text-muted hover:text-foreground"
-                    }`}
-                  >
-                    <IconComponent className="w-3.5 h-3.5" />
-                    <span>{cat.name}</span>
-                  </button>
-                );
-              })}
+            <div className="space-y-2">
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+                {DEFAULT_CATEGORIES.map((cat) => {
+                  const IconComponent = cat.icon;
+                  const isSelected = selectedCat === cat.name;
+                  return (
+                    <button
+                      key={cat.name}
+                      type="button"
+                      onClick={() => setSelectedCat(cat.name)}
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border touch-target ${
+                        isSelected
+                          ? "bg-primary/15 border-primary text-primary"
+                          : "bg-card border-line text-muted hover:text-foreground"
+                      }`}
+                    >
+                      <IconComponent className="w-3.5 h-3.5" />
+                      <span>{cat.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Sélection Dépense Prévue (Story D2) */}
+              <div>
+                <select
+                  aria-label="Rattacher à une dépense prévue"
+                  value={selectedPlannedId || ""}
+                  onChange={(e) => {
+                    const id = e.target.value || null;
+                    setSelectedPlannedId(id);
+                    if (id) {
+                      const found = plannedList.find((p) => p.id === id);
+                      if (found) setSelectedCat(found.category);
+                    }
+                  }}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-line bg-card text-foreground text-xs outline-none focus:border-primary transition-colors touch-target"
+                >
+                  <option value="">Dépense imprévue (aucun rattachement)</option>
+                  {plannedList.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      Rattacher : {p.name} ({p.category} · Reste : {formatAmount(p.left, currency)})
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           )}
 

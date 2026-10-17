@@ -4,6 +4,7 @@ import {
   incomeInputSchema,
   loanInputSchema,
   salaryInputSchema,
+  plannedExpenseInputSchema,
 } from "./operations";
 
 const dummyUuid = "123e4567-e89b-12d3-a456-426614174000";
@@ -117,5 +118,60 @@ describe("Validation du salaire mensuel (Story R1)", () => {
 
   it("rejette un salaire négatif", () => {
     expect(salaryInputSchema.safeParse({ salary: -500 }).success).toBe(false);
+  });
+});
+
+describe("Validation des dépenses prévues (Story D3)", () => {
+  it("valide une dépense prévue mensuelle correcte", () => {
+    const res = plannedExpenseInputSchema.safeParse({
+      name: "Loyer",
+      amount: 60000,
+      category: "Logement",
+      period: "month",
+      startDate: "2026-10-01",
+      localId: dummyUuid,
+    });
+    expect(res.success).toBe(true);
+  });
+
+  it("valide les différentes périodes (day, week, month)", () => {
+    const base = {
+      name: "Courses",
+      amount: 25000,
+      category: "Alimentation",
+      startDate: "2026-10-12",
+      localId: dummyUuid,
+    };
+
+    expect(plannedExpenseInputSchema.safeParse({ ...base, period: "day" }).success).toBe(true);
+    expect(plannedExpenseInputSchema.safeParse({ ...base, period: "week" }).success).toBe(true);
+    expect(plannedExpenseInputSchema.safeParse({ ...base, period: "month" }).success).toBe(true);
+    expect(plannedExpenseInputSchema.safeParse({ ...base, period: "year" }).success).toBe(false);
+  });
+
+  it("rejette une dépense prévue avec un montant négatif ou nul", () => {
+    expect(
+      plannedExpenseInputSchema.safeParse({
+        name: "Facture",
+        amount: 0,
+        category: "Factures",
+        period: "month",
+        startDate: "2026-10-01",
+        localId: dummyUuid,
+      }).success
+    ).toBe(false);
+  });
+
+  it("rejette un nom manquant ou vide", () => {
+    expect(
+      plannedExpenseInputSchema.safeParse({
+        name: "   ",
+        amount: 10000,
+        category: "Factures",
+        period: "month",
+        startDate: "2026-10-01",
+        localId: dummyUuid,
+      }).success
+    ).toBe(false);
   });
 });

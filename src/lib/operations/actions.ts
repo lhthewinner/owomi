@@ -6,9 +6,11 @@ import {
   incomeInputSchema,
   loanInputSchema,
   salaryInputSchema,
+  plannedExpenseInputSchema,
   type ExpenseInput,
   type IncomeInput,
   type LoanInput,
+  type PlannedExpenseInput,
 } from "@/lib/validation/operations";
 import { content } from "@/content/fr";
 import {
@@ -529,4 +531,239 @@ export async function getDashboardDataAction(): Promise<OperationResult<Dashboar
       recentOperations,
     },
   };
+}
+
+export type PlannedExpenseStatus = "venir" | "cours" | "solde" | "depasse";
+
+export interface PlannedExpenseWithProgress {
+  id: string;
+  name: string;
+  amount: number;
+  category: string;
+  period: "day" | "week" | "month";
+  startDate: string;
+  spent: number;
+  left: number;
+  status: PlannedExpenseStatus;
+  progressPercent: number;
+}
+
+export interface PlannedExpensesSummary {
+  totalPlanned: number;
+  totalSpent: number;
+  totalLeft: number;
+  items: PlannedExpenseWithProgress[];
+}
+
+/**
+ * Création d'une dépense prévue (Story D3).
+ */
+export async function createPlannedExpenseAction(
+  input: PlannedExpenseInput
+): Promise<OperationResult<Database["public"]["Tables"]["planned_expenses"]["Row"]>> {
+  const parsed = plannedExpenseInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      success: false,
+      message: parsed.error.issues[0]?.message || "Données de dépense prévue invalides",
+    };
+  }
+
+  const supabase = await createServerSideClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, message: content.auth.errors.invalidCredentials };
+  }
+
+  const { data, error } = await supabase
+    .from("planned_expenses")
+    .insert({
+      user_id: user.id,
+      name: parsed.data.name,
+      amount: parsed.data.amount,
+      category: parsed.data.category,
+      period: parsed.data.period,
+      start_date: parsed.data.startDate,
+      local_id: parsed.data.localId,
+      sync_status: "synced",
+    })
+    .select()
+    .single();
+
+  if (error) {
+    return { success: false, message: "Impossible de créer la dépense prévue." };
+  }
+
+  return { success: true, data };
+}
+
+/**
+ * Mise à jour d'une dépense prévue existante (Story D3).
+ */
+export async function updatePlannedExpenseAction(
+  id: string,
+  input: Partial<PlannedExpenseInput>
+): Promise<OperationResult> {
+  const supabase = await createServerSideClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, message: content.auth.errors.invalidCredentials };
+  }
+
+  const updatePayload: Record<string, unknown> = {
+    last_modified_at: new Date().toISOString(),
+  };
+
+  if (input.name) updatePayload.name = input.name.trim();
+  if (input.amount && input.amount > 0) updatePayload.amount = input.amount;
+  if (input.category) updatePayload.category = input.category;
+  if (input.period) updatePayload.period = input.period;
+  if (input.startDate) updatePayload.start_date = input.startDate;
+
+  const { error } = await supabase
+    .from("planned_expenses")
+    .update(updatePayload)
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) {
+    return { success: false, message: "Impossible de modifier la dépense prévue." };
+  }
+
+  return { success: true };
+}
+
+/**
+ * Suppression d'une dépense prévue (Story D3).
+ * Règle d'or : Les règlements déjà effectués deviennent des dépenses imprévues (ON DELETE SET NULL).
+ */
+export async function deletePlannedExpenseAction(id: string): Promise<OperationResult> {
+  const supabase = await createServerSideClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, message: content.auth.errors.invalidCredentials };
+  }
+
+  const { error } = await supabase
+    .from("planned_expenses")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) {
+    return { success: false, message: "Impossible de supprimer la dépense prévue." };
+  }
+
+  return { success: true };
+}
+
+/**
+ * Récupération des dépenses prévues avec calcul de progression et statut (Stories D2 & D3).
+ */
+export async function getPlannedExpensesWithProgressAction(): Promise<
+  OperationResult<PlannedExpensesSummary>
+> {
+  const supabase = await createServerSideClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, message: content.auth.errors.invalidCredentials };
+  }
+
+  const [plannedRes, expRes] = await Promise.all([
+    supabase
+      .from("planned_expenses")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("expenses")
+      .select("amount, planned_expense_id")
+      .eq("user_id", user.id)
+      .not("planned_expense_id", "is", null),
+  ]);
+
+  const plannedRows = (plannedRes.data || []) as Database["public"]["Tables"]["planned_expenses"]["Row"][];
+  const expenseRows = (expRes.data || []) as Array<{ amount: number; planned_expense_id: string | null }>;
+
+  const items: PlannedExpenseWithProgress[] = plannedRows.map((p) => {
+    const spent = expenseRows
+      .filter((e) => e.planned_expense_id === p.id)
+      .reduce((sum, e) => sum + e.amount, 0);
+
+    let status: PlannedExpenseStatus = "venir";
+    if (spent === 0) {
+      status = "venir";
+    } else if (spent > p.amount) {
+      status = "depasse";
+    } else if (spent === p.amount) {
+      status = "solde";
+    } else {
+      status = "cours";
+    }
+
+    const left = Math.max(0, p.amount - spent);
+    const progressPercent = Math.min(100, Math.round((spent / p.amount) * 100));
+
+    return {
+      id: p.id,
+      name: p.name,
+      amount: p.amount,
+      category: p.category,
+      period: p.period,
+      startDate: p.start_date,
+      spent,
+      left,
+      status,
+      progressPercent,
+    };
+  });
+
+  const totalPlanned = items.reduce((sum, i) => sum + i.amount, 0);
+  const totalSpent = items.reduce((sum, i) => sum + i.spent, 0);
+  const totalLeft = Math.max(0, totalPlanned - totalSpent);
+
+  return {
+    success: true,
+    data: {
+      totalPlanned,
+      totalSpent,
+      totalLeft,
+      items,
+    },
+  };
+}
+
+/**
+ * Récupère les dépenses prévues actives (non soldées) pour la sélection dans l'ajout rapide.
+ */
+export async function getActivePlannedExpensesAction(): Promise<
+  OperationResult<Array<{ id: string; name: string; category: string; left: number }>>
+> {
+  const res = await getPlannedExpensesWithProgressAction();
+  if (!res.success || !res.data) {
+    return { success: false, message: res.message };
+  }
+
+  const active = res.data.items
+    .filter((item) => item.status !== "solde")
+    .map((item) => ({
+      id: item.id,
+      name: item.name,
+      category: item.category,
+      left: item.left,
+    }));
+
+  return { success: true, data: active };
 }

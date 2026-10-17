@@ -60,7 +60,22 @@ export const salaryInputSchema = z.object({
     .nonnegative("Le salaire ne peut pas être négatif"),
 });
 
+export const plannedExpenseInputSchema = z.object({
+  name: z.string().trim().min(1, "Le nom de la dépense prévue est obligatoire").max(100, "Le nom ne doit pas dépasser 100 caractères"),
+  amount: z
+    .number({ invalid_type_error: "Le montant prévu doit être un nombre entier" })
+    .int("Le montant prévu doit être un nombre entier sans décimales")
+    .positive("Le montant prévu doit être supérieur à 0"),
+  category: z.string().trim().min(1, "La catégorie est obligatoire"),
+  period: z.enum(["day", "week", "month"], {
+    errorMap: () => ({ message: "Période invalide (jour, semaine ou mois requis)" }),
+  }),
+  startDate: dateStringSchema,
+  localId: localIdSchema,
+});
+
 export type ExpenseInput = z.infer<typeof expenseInputSchema>;
 export type IncomeInput = z.infer<typeof incomeInputSchema>;
 export type LoanInput = z.infer<typeof loanInputSchema>;
 export type SalaryInput = z.infer<typeof salaryInputSchema>;
+export type PlannedExpenseInput = z.infer<typeof plannedExpenseInputSchema>;
