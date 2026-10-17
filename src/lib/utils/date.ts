@@ -118,11 +118,35 @@ export function getCurrentMonthRange(dateStr: string): { start: string; end: str
 }
 
 /**
- * Renvoie la plage de dates { start, end } pour une période ('day' | 'week' | 'month')
- * et une date de référence YYYY-MM-DD.
+ * Calcule la plage du semestre civil (S1 ou S2) pour une date YYYY-MM-DD donnée.
+ * - S1 : du 1er janvier au 30 juin
+ * - S2 : du 1er juillet au 31 décembre
+ */
+export function getCurrentSemesterRange(dateStr: string): { start: string; end: string } {
+  const [y, m] = dateStr.split("-").map(Number);
+  const isFirstSemester = m <= 6;
+  const start = isFirstSemester ? `${y}-01-01` : `${y}-07-01`;
+  const end = isFirstSemester ? `${y}-06-30` : `${y}-12-31`;
+  return { start, end };
+}
+
+/**
+ * Calcule la plage de l'année civile pour une date YYYY-MM-DD donnée.
+ * - du 1er janvier au 31 décembre
+ */
+export function getCurrentYearRange(dateStr: string): { start: string; end: string } {
+  const [y] = dateStr.split("-").map(Number);
+  return {
+    start: `${y}-01-01`,
+    end: `${y}-12-31`,
+  };
+}
+
+/**
+ * Renvoie la plage de dates { start, end } pour une période donnée.
  */
 export function getDateRange(
-  period: "day" | "week" | "month",
+  period: "day" | "week" | "month" | "semester" | "year",
   dateStr: string
 ): { start: string; end: string } {
   if (period === "day") {
@@ -131,17 +155,25 @@ export function getDateRange(
   if (period === "week") {
     return getCurrentWeekRange(dateStr);
   }
-  return getCurrentMonthRange(dateStr);
+  if (period === "month") {
+    return getCurrentMonthRange(dateStr);
+  }
+  if (period === "semester") {
+    return getCurrentSemesterRange(dateStr);
+  }
+  return getCurrentYearRange(dateStr);
 }
 
 /**
  * Formate un libellé de plage de dates en français selon la période.
  * - 'day': "samedi 17 octobre"
- * - 'week': "Du 12 octobre au 18 octobre" (ou "Du 28 septembre au 4 octobre")
+ * - 'week': "Du 12 octobre au 18 octobre"
  * - 'month': "octobre 2026"
+ * - 'semester': "1er semestre 2026" ou "2nd semestre 2026"
+ * - 'year': "Année 2026"
  */
 export function formatDateRangeFrench(
-  period: "day" | "week" | "month",
+  period: "day" | "week" | "month" | "semester" | "year",
   startStr: string,
   endStr: string
 ): string {
@@ -150,7 +182,7 @@ export function formatDateRangeFrench(
   }
 
   const [y1, m1, d1] = startStr.split("-").map(Number);
-  const [y2, m2, d2] = endStr.split("-").map(Number);
+  const [, m2, d2] = endStr.split("-").map(Number);
 
   if (period === "week") {
     const month1 = MONTHS[m1 - 1] || "";
@@ -158,9 +190,17 @@ export function formatDateRangeFrench(
     return `Du ${d1} ${month1} au ${d2} ${month2}`;
   }
 
-  // period === 'month'
-  const monthName = MONTHS[m1 - 1] || "";
-  return `${monthName} ${y1}`;
+  if (period === "month") {
+    const monthName = MONTHS[m1 - 1] || "";
+    return `${monthName} ${y1}`;
+  }
+
+  if (period === "semester") {
+    const sNum = m1 <= 6 ? 1 : 2;
+    return `${sNum === 1 ? "1er" : "2nd"} semestre ${y1}`;
+  }
+
+  return `Année ${y1}`;
 }
 
 /**
@@ -168,7 +208,7 @@ export function formatDateRangeFrench(
  */
 export function shiftDate(
   dateStr: string,
-  period: "day" | "week" | "month",
+  period: "day" | "week" | "month" | "semester" | "year",
   delta: number
 ): string {
   const [y, m, d] = dateStr.split("-").map(Number);
@@ -178,8 +218,12 @@ export function shiftDate(
     dt.setDate(dt.getDate() + delta);
   } else if (period === "week") {
     dt.setDate(dt.getDate() + delta * 7);
-  } else {
+  } else if (period === "month") {
     dt.setMonth(dt.getMonth() + delta);
+  } else if (period === "semester") {
+    dt.setMonth(dt.getMonth() + delta * 6);
+  } else {
+    dt.setFullYear(dt.getFullYear() + delta);
   }
 
   const pad = (n: number) => String(n).padStart(2, "0");

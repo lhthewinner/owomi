@@ -5,6 +5,10 @@ import {
   generateLocalId,
   getCurrentWeekRange,
   getCurrentMonthRange,
+  getCurrentSemesterRange,
+  getCurrentYearRange,
+  formatDateRangeFrench,
+  shiftDate,
 } from "./date";
 
 describe("Utilitaires de date et fuseau horaire", () => {
@@ -38,5 +42,39 @@ describe("Utilitaires de date et fuseau horaire", () => {
     const range = getCurrentMonthRange("2026-10-17");
     expect(range.start).toBe("2026-10-01");
     expect(range.end).toBe("2026-10-31");
+  });
+
+  it("calcule la plage du semestre civil (S1 et S2)", () => {
+    // S2 : octobre 2026
+    const s2 = getCurrentSemesterRange("2026-10-17");
+    expect(s2.start).toBe("2026-07-01");
+    expect(s2.end).toBe("2026-12-31");
+
+    // S1 : mars 2026
+    const s1 = getCurrentSemesterRange("2026-03-15");
+    expect(s1.start).toBe("2026-01-01");
+    expect(s1.end).toBe("2026-06-30");
+  });
+
+  it("calcule la plage de l'année civile", () => {
+    const year = getCurrentYearRange("2026-10-17");
+    expect(year.start).toBe("2026-01-01");
+    expect(year.end).toBe("2026-12-31");
+  });
+
+  it("formate correctement les plages de semestre et d'année en français", () => {
+    expect(formatDateRangeFrench("semester", "2026-01-01", "2026-06-30")).toBe("1er semestre 2026");
+    expect(formatDateRangeFrench("semester", "2026-07-01", "2026-12-31")).toBe("2nd semestre 2026");
+    expect(formatDateRangeFrench("year", "2026-01-01", "2026-12-31")).toBe("Année 2026");
+  });
+
+  it("décale correctement les semestres et les années", () => {
+    // Décalage semestre : +6 mois
+    const nextSem = shiftDate("2026-03-01", "semester", 1);
+    expect(nextSem).toBe("2026-09-01");
+
+    // Décalage année : +1 an
+    const nextYear = shiftDate("2026-10-17", "year", 1);
+    expect(nextYear).toBe("2027-10-17");
   });
 });
