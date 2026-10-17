@@ -7,6 +7,7 @@ import { IncomeAndLoansView } from "./IncomeAndLoansView";
 interface BudgetViewProps {
   currency?: string;
   userTimezone?: string;
+  initialSubTab?: "planned" | "income";
   onOpenPayPlanned: (plannedExpenseId: string) => void;
   onOpenAddIncome: () => void;
   onOpenAddLoan: () => void;
@@ -17,13 +18,14 @@ interface BudgetViewProps {
 export function BudgetView({
   currency = "FCFA",
   userTimezone = "Africa/Porto-Novo",
+  initialSubTab = "planned",
   onOpenPayPlanned,
   onOpenAddIncome,
   onOpenAddLoan,
   onShowToast,
   refreshTrigger = 0,
 }: BudgetViewProps) {
-  const [activeTab, setActiveTab] = useState<"planned" | "income">("planned");
+  const [activeTab, setActiveTab] = useState<"planned" | "income">(initialSubTab);
 
   return (
     <div className="space-y-5 pb-6 animate-fadeIn">

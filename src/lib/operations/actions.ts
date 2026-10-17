@@ -29,6 +29,23 @@ import {
   type LoanItem,
 } from "@/lib/balance/calculator";
 import type { Database } from "@/types/database";
+import { cookies } from "next/headers";
+import {
+  getDemoDashboardData,
+  getDemoPlannedExpenses,
+  getDemoIncomesAndLoans,
+  getDemoBalanceData,
+  getDemoHistoryOperations,
+} from "./demoData";
+
+async function isDemoSession(): Promise<boolean> {
+  try {
+    const cookieStore = await cookies();
+    return cookieStore.get("asoro_demo")?.value === "true";
+  } catch {
+    return false;
+  }
+}
 
 type OperationResult<T = unknown> = {
   success: boolean;
@@ -294,6 +311,9 @@ export async function getIncomesAndLoansDataAction(): Promise<
   } = await supabase.auth.getUser();
 
   if (!user) {
+    if (await isDemoSession()) {
+      return { success: true, data: getDemoIncomesAndLoans(getTodayDateString("Africa/Porto-Novo")) };
+    }
     return { success: false, message: content.auth.errors.invalidCredentials };
   }
 
@@ -452,6 +472,9 @@ export async function getDashboardDataAction(): Promise<OperationResult<Dashboar
   } = await supabase.auth.getUser();
 
   if (!user) {
+    if (await isDemoSession()) {
+      return { success: true, data: getDemoDashboardData(getTodayDateString("Africa/Porto-Novo")) };
+    }
     return { success: false, message: content.auth.errors.invalidCredentials };
   }
 
@@ -693,6 +716,9 @@ export async function getPlannedExpensesWithProgressAction(): Promise<
   } = await supabase.auth.getUser();
 
   if (!user) {
+    if (await isDemoSession()) {
+      return { success: true, data: getDemoPlannedExpenses(getTodayDateString("Africa/Porto-Novo")) };
+    }
     return { success: false, message: content.auth.errors.invalidCredentials };
   }
 
@@ -792,6 +818,10 @@ export async function getBalanceDataAction(
   } = await supabase.auth.getUser();
 
   if (!user) {
+    if (await isDemoSession()) {
+      const today = referenceDate || getTodayDateString("Africa/Porto-Novo");
+      return { success: true, data: getDemoBalanceData(period, today) };
+    }
     return { success: false, message: content.auth.errors.invalidCredentials };
   }
 
@@ -915,6 +945,17 @@ export async function getProfilePreferencesAction(): Promise<
   } = await supabase.auth.getUser();
 
   if (!user) {
+    if (await isDemoSession()) {
+      return {
+        success: true,
+        data: {
+          currency: "FCFA",
+          timezone: "Africa/Porto-Novo",
+          theme: "light",
+          monthlySalary: 250000,
+        },
+      };
+    }
     return { success: false, message: content.auth.errors.invalidCredentials };
   }
 
@@ -952,6 +993,12 @@ export async function getHistoryOperationsAction(
   } = await supabase.auth.getUser();
 
   if (!user) {
+    if (await isDemoSession()) {
+      return {
+        success: true,
+        data: getDemoHistoryOperations(filter, getTodayDateString("Africa/Porto-Novo")),
+      };
+    }
     return { success: false, message: content.auth.errors.invalidCredentials };
   }
 

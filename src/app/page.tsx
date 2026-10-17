@@ -33,6 +33,7 @@ export default function HomePage() {
 
   // Navigation dans l'espace connecté
   const [activeTab, setActiveTab] = useState<NavTab | "profile">("dashboard");
+  const [budgetSubTab, setBudgetSubTab] = useState<"planned" | "income">("planned");
   const [isAddOpen, setIsAddOpen] = useState<boolean>(false);
   const [addMode, setAddMode] = useState<OperationMode>("exp");
   const [payPlannedId, setPayPlannedId] = useState<string | null>(null);
@@ -46,6 +47,64 @@ export default function HomePage() {
     const initialDark = savedTheme === "dark" || (!savedTheme && prefersDark);
     setIsDark(initialDark);
     document.documentElement.setAttribute("data-theme", initialDark ? "dark" : "light");
+
+    // Support Démo / Mode de prévisualisation (pour capture d'écran et test visuel)
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewParam = urlParams.get("view");
+
+    if (viewParam === "signup") {
+      setCurrentUser(null);
+      setAuthTab("signup");
+      setView("auth");
+      return;
+    } else if (viewParam === "login") {
+      setCurrentUser(null);
+      setAuthTab("login");
+      setView("auth");
+      return;
+    } else if (viewParam === "forgot") {
+      setCurrentUser(null);
+      setView("forgot");
+      return;
+    } else if (viewParam === "welcome") {
+      setCurrentUser(null);
+      setView("welcome");
+      return;
+    }
+
+    const isDemo =
+      urlParams.get("demo") === "1" ||
+      document.cookie.includes("asoro_demo=true");
+
+    if (isDemo) {
+      document.cookie = "asoro_demo=true; path=/";
+      setCurrentUser({
+        id: "demo-user-id",
+        email: "alex@asoro.app",
+        user_metadata: { name: "Alex" },
+        app_metadata: {},
+        aud: "authenticated",
+        created_at: new Date().toISOString(),
+      } as User);
+      setView("authenticated");
+
+      const tabParam = urlParams.get("tab") as NavTab | "profile";
+      if (tabParam && ["dashboard", "budget", "bilan", "history", "profile"].includes(tabParam)) {
+        setActiveTab(tabParam);
+      }
+      const subParam = urlParams.get("subtab") as "planned" | "income";
+      if (subParam && ["planned", "income"].includes(subParam)) {
+        setBudgetSubTab(subParam);
+      }
+      if (urlParams.get("openAdd") === "1") {
+        setIsAddOpen(true);
+      }
+      if (urlParams.get("dark") === "1") {
+        setIsDark(true);
+        document.documentElement.setAttribute("data-theme", "dark");
+      }
+      return;
+    }
 
     // Vérification d'une session existante (persistance hors ligne via getSession)
     const supabase = createClient();
@@ -252,6 +311,7 @@ export default function HomePage() {
 
               {activeTab === "budget" && (
                 <BudgetView
+                  initialSubTab={budgetSubTab}
                   onOpenPayPlanned={(id) => {
                     setPayPlannedId(id);
                     setAddMode("exp");
