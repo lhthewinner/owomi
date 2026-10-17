@@ -225,12 +225,12 @@ export default function HomePage() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-100 dark:bg-[#05080F] flex items-center justify-center p-0 sm:p-4">
-      {/* Conteneur mobile centré (390px sur bureau, plein écran sur mobile) */}
-      <div className="w-full sm:w-[390px] min-h-screen sm:min-h-[820px] sm:max-h-[96vh] bg-background sm:border-[10px] sm:border-slate-900 dark:sm:border-slate-950 sm:rounded-[38px] sm:shadow-2xl overflow-y-auto flex flex-col justify-between relative transition-colors duration-200">
+    <main className="min-h-screen bg-background text-foreground flex flex-col items-center justify-start transition-colors duration-200">
+      {/* Conteneur principal responsive (Plein écran sur mobile, centré et fluide sur tablette/PC) */}
+      <div className="w-full max-w-xl md:max-w-2xl lg:max-w-3xl min-h-screen flex flex-col justify-between relative transition-colors duration-200 sm:px-4 md:px-6">
         {/* 1. ÉCRAN ACCUEIL VISITEUR */}
         {view === "welcome" && (
-          <div className="flex flex-col h-full justify-between p-6 sm:p-7 animate-fadeIn">
+          <div className="flex flex-col h-full justify-between p-6 sm:p-8 max-w-lg mx-auto w-full my-auto animate-fadeIn">
             {/* En-tête */}
             <div className="flex items-center justify-between pt-2">
               <div className="flex items-center gap-2.5 font-extrabold text-xl tracking-tight text-foreground">
@@ -321,7 +321,7 @@ export default function HomePage() {
 
         {/* 2. ÉCRAN AUTHENTIFICATION (INSCRIPTION / CONNEXION) */}
         {view === "auth" && (
-          <div className="p-6 sm:p-7">
+          <div className="p-6 sm:p-8 max-w-md mx-auto w-full my-auto">
             <AuthCard
               initialTab={authTab}
               onBack={() => {
@@ -344,7 +344,7 @@ export default function HomePage() {
 
         {/* 3. ÉCRAN MOT DE PASSE OUBLIÉ */}
         {view === "forgot" && (
-          <div className="p-6 sm:p-7">
+          <div className="p-6 sm:p-8 max-w-md mx-auto w-full my-auto">
             <ForgotPasswordCard
               onBack={() => {
                 if (typeof window !== "undefined" && window.history.length > 1) {

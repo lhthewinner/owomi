@@ -316,8 +316,8 @@ export function QuickAddSheet({
       {/* Clic en dehors pour fermer */}
       <div className="absolute inset-0" onClick={onClose} />
 
-      {/* Volet bas (Bottom sheet) */}
-      <div className="relative w-full sm:w-[390px] bg-background border-t border-line rounded-t-[32px] p-5 shadow-2xl flex flex-col max-h-[92vh] overflow-y-auto z-10 animate-slideUp">
+      {/* Volet bas (Bottom sheet sur mobile, modal centrée sur desktop) */}
+      <div className="relative w-full sm:max-w-md bg-background border-t border-line rounded-t-[32px] sm:rounded-3xl sm:border sm:border-line sm:mb-6 p-5 shadow-2xl flex flex-col max-h-[92vh] overflow-y-auto z-10 animate-slideUp">
         {/* Barre de préhension */}
         <div className="w-10 h-1 bg-line rounded-full mx-auto mb-3" />
 

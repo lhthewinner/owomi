@@ -15,7 +15,7 @@ export function BottomNav({ activeTab, onChangeTab, onOpenAdd }: BottomNavProps)
   return (
     <nav
       aria-label="Navigation principale"
-      className="sticky bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t border-line px-3 py-2 flex items-center justify-around z-30"
+      className="sticky bottom-0 left-0 right-0 w-full max-w-xl md:max-w-2xl lg:max-w-3xl mx-auto bg-background/95 backdrop-blur-md border-t sm:border-x border-line sm:rounded-t-2xl px-3 sm:px-6 py-2 flex items-center justify-around z-30 transition-all"
     >
       {/* 1. Accueil */}
       <button

@@ -1,6 +1,6 @@
 # Rapport de Test Visuel — Application Asoro
 
-*Généré le 17/10/2026 14:31:57*
+*Généré le 17/10/2026 14:58:16*
 
 Ce dossier regroupe les captures d'écran réelles issues des tests automatiques sur l'ensemble des écrans et fonctionnalités de l'application Asoro.
 
@@ -19,6 +19,7 @@ Ce dossier regroupe les captures d'écran réelles issues des tests automatiques
 | 11 | **Profil & Paramètres** | Choix de la devise (FCFA, EUR, USD), bascule de thème clair/sombre, option 'Solde figé à minuit', déconnexion et suppression sécurisée. | [11_profil.png](./11_profil.png) |
 | 12 | **Tableau de bord — Thème sombre** | Rendu optimal et contrasté du thème sombre conforme à la maquette et aux critères WCAG AA. | [12_mode_sombre.png](./12_mode_sombre.png) |
 | 13 | **Déverrouillage par code PIN** | Écran de sécurité tactile : saisie du PIN à 4 chiffres, protection anti-brute-force (3 essais max) et bouton de secours 'PIN oublié'. | [13_verrouillage_pin.png](./13_verrouillage_pin.png) |
+| 14 | **Tableau de bord — Rendu PC / Écran d'ordinateur** | Interface web fluide et aérée s'adaptant élégamment sur grand écran sans cadre de téléphone artificiel. | [14_desktop_pc.png](./14_desktop_pc.png) |
 
 ---
 
@@ -88,4 +89,9 @@ Ce dossier regroupe les captures d'écran réelles issues des tests automatiques
 > Écran de sécurité tactile : saisie du PIN à 4 chiffres, protection anti-brute-force (3 essais max) et bouton de secours 'PIN oublié'.
 
 ![Déverrouillage par code PIN](./13_verrouillage_pin.png)
+
+### 14. Tableau de bord — Rendu PC / Écran d'ordinateur
+> Interface web fluide et aérée s'adaptant élégamment sur grand écran sans cadre de téléphone artificiel.
+
+![Tableau de bord — Rendu PC / Écran d'ordinateur](./14_desktop_pc.png)
 

@@ -190,6 +190,27 @@ async function main() {
       });
     }
 
+    // Capture supplémentaire spécifique Desktop PC (1280x800, non mobile)
+    console.log(`[Capture] 14_desktop_pc : Affichage Responsive sur écran d'ordinateur (PC)...`);
+    await send("Emulation.setDeviceMetricsOverride", {
+      width: 1280,
+      height: 800,
+      deviceScaleFactor: 1.5,
+      mobile: false,
+    });
+    await send("Page.navigate", { url: "http://localhost:3000/?demo=1&tab=dashboard" });
+    await new Promise((r) => setTimeout(r, 1500));
+    const desktopShot = await send("Page.captureScreenshot", { format: "png" });
+    const desktopPath = path.join("capture", "14_desktop_pc.png");
+    fs.writeFileSync(desktopPath, Buffer.from(desktopShot.data, "base64"));
+    console.log(`✓ Sauvegardé : ${desktopPath}`);
+    reportResults.push({
+      name: "14_desktop_pc",
+      title: "Tableau de bord — Rendu PC / Écran d'ordinateur",
+      description: "Interface web fluide et aérée s'adaptant élégamment sur grand écran sans cadre de téléphone artificiel.",
+      filename: "14_desktop_pc.png",
+    });
+
     // Génération du rapport de tests markdown
     let md = `# Rapport de Test Visuel — Application Asoro\n\n`;
     md += `*Généré le ${new Date().toLocaleString("fr-FR")}*\n\n`;
