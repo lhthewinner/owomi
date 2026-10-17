@@ -97,8 +97,8 @@ export default function HomePage() {
         document.cookie = "asoro_demo=true; path=/";
         setCurrentUser({
           id: "demo-user-id",
-          email: "alex@asoro.app",
-          user_metadata: { name: "Alex" },
+          email: "test@asoro.app",
+          user_metadata: { name: "Testeur", firstname: "Alex" },
           app_metadata: {},
           aud: "authenticated",
           created_at: new Date().toISOString(),
@@ -207,6 +207,9 @@ export default function HomePage() {
     clearAllLocalPins();
     setIsPinUnlocked(false);
     await clearAllLocalData();
+    if (typeof document !== "undefined") {
+      document.cookie = "asoro_demo=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    }
     await signOutAction();
     setCurrentUser(null);
     setView("welcome");
@@ -218,6 +221,9 @@ export default function HomePage() {
     clearAllLocalPins();
     setIsPinUnlocked(false);
     await clearAllLocalData();
+    if (typeof document !== "undefined") {
+      document.cookie = "asoro_demo=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    }
     setCurrentUser(null);
     setView("welcome");
     setActiveTab("dashboard");
@@ -333,6 +339,20 @@ export default function HomePage() {
               }}
               onGoForgot={() => navigateToView("forgot")}
               onSuccessLogin={() => {
+                if (typeof document !== "undefined") {
+                  document.cookie = "asoro_demo=true; path=/";
+                }
+                if (!currentUser) {
+                  setCurrentUser({
+                    id: "demo-user-id",
+                    email: "test@asoro.app",
+                    user_metadata: { name: "Testeur", firstname: "Alex" },
+                    app_metadata: {},
+                    aud: "authenticated",
+                    created_at: new Date().toISOString(),
+                  } as User);
+                  setIsPinUnlocked(true);
+                }
                 setView("authenticated");
                 if (typeof window !== "undefined") {
                   window.history.replaceState({ view: "authenticated", activeTab: "dashboard" }, "");

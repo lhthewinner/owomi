@@ -1,5 +1,6 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { createServerSideClient } from "@/lib/supabase/server";
 import {
   signupSchema,
@@ -80,6 +81,23 @@ export async function signInAction(
   }
 
   const { email, password } = parsed.data;
+
+  // Compte de test local (environnement de dev / prévisualisation)
+  const isLocalEnv = process.env.NODE_ENV !== "production";
+  if (
+    isLocalEnv &&
+    email.toLowerCase().trim() === "test@asoro.app" &&
+    password === "Asoro2026!"
+  ) {
+    try {
+      const cookieStore = await cookies();
+      cookieStore.set("asoro_demo", "true", { path: "/" });
+    } catch {
+      // Ignorer si hors contexte Next.js
+    }
+    return { success: true };
+  }
+
   const supabase = await createServerSideClient();
 
   const { data: authData, error } = await supabase.auth.signInWithPassword({
@@ -146,6 +164,13 @@ export async function forgotPasswordAction(
  * Ferme la session Supabase côté serveur.
  */
 export async function signOutAction(): Promise<AuthActionResult> {
+  try {
+    const cookieStore = await cookies();
+    cookieStore.delete("asoro_demo");
+  } catch {
+    // Ignorer si hors contexte Next.js
+  }
+
   const supabase = await createServerSideClient();
   const { error } = await supabase.auth.signOut();
 
