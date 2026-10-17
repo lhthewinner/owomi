@@ -49,6 +49,17 @@ export function HistoryView({
     loadOperations();
   }, [loadOperations, refreshTrigger]);
 
+  useEffect(() => {
+    if (!deletingOp) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setDeletingOp(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [deletingOp]);
+
   const handleDeleteConfirm = async () => {
     if (!deletingOp) return;
     setIsDeleting(true);

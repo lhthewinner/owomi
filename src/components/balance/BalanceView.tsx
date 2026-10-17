@@ -63,6 +63,16 @@ export function BalanceView({
     loadData();
   }, [loadData, refreshTrigger]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isPdfModalOpen) {
+        setIsPdfModalOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isPdfModalOpen]);
+
   const handlePeriodChange = (p: PeriodType) => {
     setPeriod(p);
   };
@@ -175,14 +185,19 @@ export function BalanceView({
 
       {/* Modal d'information sur le rapport PDF (prévu en V1.1 selon cahier des charges) */}
       {isPdfModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="pdf-modal-title"
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn"
+        >
           <div className="bg-card w-full max-w-sm rounded-3xl p-6 border border-line shadow-2xl space-y-4">
             <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto">
               <FileText className="w-6 h-6" />
             </div>
 
             <div className="text-center space-y-1.5">
-              <h3 className="text-base font-extrabold text-foreground">
+              <h3 id="pdf-modal-title" className="text-base font-extrabold text-foreground">
                 {content.balance.generatePdfBtn}
               </h3>
               <p className="text-xs text-muted leading-relaxed">

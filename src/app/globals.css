@@ -79,3 +79,10 @@ body {
   min-height: 44px;
   min-width: 44px;
 }
+
+/* Focus visible accessible pour la navigation clavier (WCAG AA) */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+

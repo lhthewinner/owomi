@@ -52,6 +52,17 @@ export function PlannedExpenseModal({
     setError(null);
   }, [editingItem, isOpen, userTimezone]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleSave = async (e: React.FormEvent) => {
@@ -86,7 +97,7 @@ export function PlannedExpenseModal({
           return;
         }
 
-        onSuccess("✓ Dépense prévue modifiée");
+        onSuccess("Dépense prévue modifiée");
       } else {
         const localId = generateLocalId();
         const res = await createPlannedExpenseAction({
@@ -103,7 +114,7 @@ export function PlannedExpenseModal({
           return;
         }
 
-        onSuccess("✓ Dépense prévue créée");
+        onSuccess("Dépense prévue créée");
       }
 
       onClose();

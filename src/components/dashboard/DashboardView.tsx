@@ -72,6 +72,16 @@ export function DashboardView({
     loadData();
   }, [loadData, refreshTrigger]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && deletingOp) {
+        setDeletingOp(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [deletingOp]);
+
   const handleDeleteConfirm = async () => {
     if (!deletingOp) return;
     setIsDeleting(true);
@@ -86,7 +96,7 @@ export function DashboardView({
       }
 
       if (res.success) {
-        onShowToast("✓ Opération supprimée");
+        onShowToast("Opération supprimée");
         setDeletingOp(null);
         await loadData();
       } else {
@@ -420,14 +430,19 @@ export function DashboardView({
 
       {/* 6. Modal de confirmation de suppression d'opération (Story D4 & R3) */}
       {deletingOp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-op-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn"
+        >
           <div className="w-full max-w-xs bg-background border border-line rounded-3xl p-5 shadow-2xl space-y-4 animate-slideUp">
             <div className="w-10 h-10 rounded-2xl bg-danger/10 text-danger flex items-center justify-center mx-auto">
               <Trash2 className="w-5 h-5" />
             </div>
 
             <div className="text-center">
-              <h3 className="text-sm font-extrabold text-foreground">
+              <h3 id="delete-op-title" className="text-sm font-extrabold text-foreground">
                 Supprimer cette opération ?
               </h3>
               <p className="text-xs text-muted mt-1 leading-relaxed">

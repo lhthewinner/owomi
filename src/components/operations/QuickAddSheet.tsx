@@ -9,6 +9,7 @@ import {
   Coins,
   ArrowDownLeft,
   ArrowUpRight,
+  Delete,
 } from "lucide-react";
 import { formatAmount } from "@/lib/utils/currency";
 import { DEFAULT_CATEGORIES } from "@/lib/constants/categories";
@@ -79,6 +80,17 @@ export function QuickAddSheet({
     }
   }, [isOpen, initialMode, initialPlannedExpenseId]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleKeypadPress = (k: string) => {
@@ -123,8 +135,8 @@ export function QuickAddSheet({
           });
           onSuccess(
             selectedPlannedId
-              ? "✓ Règlement enregistré hors ligne (en attente d'envoi)"
-              : "✓ Dépense enregistrée hors ligne (en attente d'envoi)"
+              ? "Règlement enregistré hors ligne (en attente d'envoi)"
+              : "Dépense enregistrée hors ligne (en attente d'envoi)"
           );
         } else if (mode === "inc") {
           await enqueueOfflineOperation({
@@ -138,7 +150,7 @@ export function QuickAddSheet({
               localId,
             },
           });
-          onSuccess("✓ Revenu enregistré hors ligne (en attente d'envoi)");
+          onSuccess("Revenu enregistré hors ligne (en attente d'envoi)");
         } else {
           if (!counterpartOrSource.trim()) {
             setError("Indiquez la personne ou l'organisme pour ce prêt.");
@@ -158,7 +170,7 @@ export function QuickAddSheet({
               localId,
             },
           });
-          onSuccess("✓ Prêt enregistré hors ligne (en attente d'envoi)");
+          onSuccess("Prêt enregistré hors ligne (en attente d'envoi)");
         }
         setAmountStr("");
         setCounterpartOrSource("");
@@ -188,8 +200,8 @@ export function QuickAddSheet({
 
         onSuccess(
           selectedPlannedId
-            ? "✓ Règlement enregistré sur la dépense prévue"
-            : "✓ Dépense enregistrée (imprévue)"
+            ? "Règlement enregistré sur la dépense prévue"
+            : "Dépense enregistrée (imprévue)"
         );
       } else if (mode === "inc") {
         const res = await createIncomeAction({
@@ -204,7 +216,7 @@ export function QuickAddSheet({
           return;
         }
 
-        onSuccess("✓ Revenu enregistré");
+        onSuccess("Revenu enregistré");
       } else {
         if (!counterpartOrSource.trim()) {
           setError("Indiquez la personne ou l'organisme pour ce prêt.");
@@ -228,8 +240,8 @@ export function QuickAddSheet({
 
         onSuccess(
           loanDir === "borrowed"
-            ? "✓ Prêt emprunté enregistré (+ solde)"
-            : "✓ Prêt accordé enregistré (− solde)"
+            ? "Prêt emprunté enregistré (+ solde)"
+            : "Prêt accordé enregistré (− solde)"
         );
       }
 
@@ -283,7 +295,7 @@ export function QuickAddSheet({
         }
         setAmountStr("");
         setCounterpartOrSource("");
-        onSuccess("✓ Enregistré hors ligne (en attente d'envoi)");
+        onSuccess("Enregistré hors ligne (en attente d'envoi)");
         onClose();
       } else {
         setError("Une erreur inattendue est survenue.");
@@ -510,9 +522,10 @@ export function QuickAddSheet({
               key={k}
               type="button"
               onClick={() => handleKeypadPress(k)}
-              className="py-3 rounded-xl bg-card border border-line text-foreground text-lg font-bold shadow-sm active:bg-card-secondary touch-target transition-colors"
+              aria-label={k === "⌫" ? "Effacer un chiffre" : `Chiffre ${k}`}
+              className="py-3 rounded-xl bg-card border border-line text-foreground text-lg font-bold shadow-sm active:bg-card-secondary touch-target transition-colors flex items-center justify-center"
             >
-              {k}
+              {k === "⌫" ? <Delete className="w-5 h-5 text-muted" /> : k}
             </button>
           ))}
         </div>

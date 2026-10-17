@@ -87,7 +87,7 @@ export const content = {
     syncSuccess: "Toutes vos opérations sont enregistrées.",
   },
   dashboard: {
-    greeting: (name: string) => `Bonjour, ${name} 👋`,
+    greeting: (name: string) => `Bonjour, ${name}`,
     restLabel: "Reste ce mois-ci",
     negativeAlert: "Solde négatif : simple alerte, rien n'est bloqué",
     positiveFormula: "Salaire + gains + prêts − dépenses",
@@ -95,7 +95,7 @@ export const content = {
     gainedToday: "Gagné hors salaire (jour)",
     spentWeek: "Dépensé cette semaine",
     gainedWeek: "Gagné hors salaire (sem.)",
-    viewDayBalance: "📊 Voir le bilan du jour",
+    viewDayBalance: "Voir le bilan du jour",
     recentOps: "Dernières opérations",
     viewAll: "Tout voir",
     emptyOpsTitle: "Aucune opération pour l'instant.",

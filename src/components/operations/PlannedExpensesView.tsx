@@ -39,7 +39,7 @@ const STATUS_CONFIG = {
     className: "bg-accent/15 text-accent",
   },
   solde: {
-    label: "Soldée ✓",
+    label: "Soldée",
     className: "bg-gain/15 text-gain",
   },
   depasse: {
@@ -89,13 +89,23 @@ export function PlannedExpensesView({
     loadData();
   }, [loadData, refreshTrigger]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && deletingItem) {
+        setDeletingItem(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [deletingItem]);
+
   const handleDeleteConfirm = async () => {
     if (!deletingItem) return;
     setIsDeleting(true);
     try {
       const res = await deletePlannedExpenseAction(deletingItem.id);
       if (res.success) {
-        onShowToast("✓ Dépense prévue supprimée (ses règlements deviennent imprévus)");
+        onShowToast("Dépense prévue supprimée (ses règlements deviennent imprévus)");
         setDeletingItem(null);
         await loadData();
       } else {
@@ -383,14 +393,19 @@ export function PlannedExpensesView({
 
       {/* 7. Modal Confirmation de Suppression (Invariant 5) */}
       {deletingItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-planned-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn"
+        >
           <div className="w-full max-w-xs bg-background border border-line rounded-3xl p-5 shadow-2xl space-y-4 animate-slideUp">
             <div className="w-10 h-10 rounded-2xl bg-danger/10 text-danger flex items-center justify-center mx-auto">
               <Trash2 className="w-5 h-5" />
             </div>
 
             <div className="text-center">
-              <h3 className="text-sm font-extrabold text-foreground">
+              <h3 id="delete-planned-title" className="text-sm font-extrabold text-foreground">
                 Supprimer « {deletingItem.name} » ?
               </h3>
               <p className="text-xs text-muted mt-1 leading-relaxed">

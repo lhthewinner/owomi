@@ -81,26 +81,56 @@ export function IncomeAndLoansView({
       if (res.success) {
         setSalary(newSalary);
         setIsEditingSalary(false);
-        onShowToast("✓ Salaire mensuel mis à jour");
+        onShowToast("Salaire mensuel mis à jour");
       }
     } finally {
       setSalaryLoading(false);
     }
   };
 
-  const handleDeleteIncome = async (id: string) => {
-    const res = await deleteIncomeAction(id);
-    if (res.success) {
-      setIncomes((prev) => prev.filter((i) => i.id !== id));
-      onShowToast("✓ Revenu supprimé");
-    }
-  };
+  const [deletingItem, setDeletingItem] = useState<{
+    type: "income" | "loan";
+    id: string;
+    label: string;
+    amount: number;
+  } | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
-  const handleDeleteLoan = async (id: string) => {
-    const res = await deleteLoanAction(id);
-    if (res.success) {
-      setLoans((prev) => prev.filter((l) => l.id !== id));
-      onShowToast("✓ Prêt supprimé");
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && deletingItem) {
+        setDeletingItem(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [deletingItem]);
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingItem) return;
+    setIsDeleting(true);
+    try {
+      if (deletingItem.type === "income") {
+        const res = await deleteIncomeAction(deletingItem.id);
+        if (res.success) {
+          setIncomes((prev) => prev.filter((i) => i.id !== deletingItem.id));
+          onShowToast("Revenu supprimé");
+          setDeletingItem(null);
+        } else {
+          onShowToast(res.message || "Erreur lors de la suppression");
+        }
+      } else {
+        const res = await deleteLoanAction(deletingItem.id);
+        if (res.success) {
+          setLoans((prev) => prev.filter((l) => l.id !== deletingItem.id));
+          onShowToast("Prêt supprimé");
+          setDeletingItem(null);
+        } else {
+          onShowToast(res.message || "Erreur lors de la suppression");
+        }
+      }
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -202,7 +232,14 @@ export function IncomeAndLoansView({
                 </div>
                 <button
                   type="button"
-                  onClick={() => handleDeleteIncome(inc.id)}
+                  onClick={() =>
+                    setDeletingItem({
+                      type: "income",
+                      id: inc.id,
+                      label: inc.source || "Revenu hors salaire",
+                      amount: inc.amount,
+                    })
+                  }
                   aria-label="Supprimer le revenu"
                   className="w-8 h-8 rounded-lg text-muted hover:text-danger flex items-center justify-center touch-target transition-colors"
                 >
@@ -285,7 +322,16 @@ export function IncomeAndLoansView({
                   </div>
                   <button
                     type="button"
-                    onClick={() => handleDeleteLoan(loan.id)}
+                    onClick={() =>
+                      setDeletingItem({
+                        type: "loan",
+                        id: loan.id,
+                        label: isBorrowed
+                          ? `Emprunt auprès de ${loan.counterpart}`
+                          : `Prêt accordé à ${loan.counterpart}`,
+                        amount: loan.amount,
+                      })
+                    }
                     aria-label="Supprimer le prêt"
                     className="w-8 h-8 rounded-lg text-muted hover:text-danger flex items-center justify-center touch-target transition-colors"
                   >
@@ -306,6 +352,59 @@ export function IncomeAndLoansView({
           <span>Enregistrer un prêt</span>
         </button>
       </div>
+
+      {/* Modal de confirmation de suppression */}
+      {deletingItem && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-income-loan-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn"
+        >
+          <div className="w-full max-w-xs bg-background border border-line rounded-3xl p-5 shadow-2xl space-y-4 animate-slideUp">
+            <div className="w-10 h-10 rounded-2xl bg-danger/10 text-danger flex items-center justify-center mx-auto">
+              <Trash2 className="w-5 h-5" />
+            </div>
+
+            <div className="text-center">
+              <h3 id="delete-income-loan-title" className="text-sm font-extrabold text-foreground">
+                Supprimer « {deletingItem.label} » ?
+              </h3>
+              <p className="text-xs text-muted mt-1 leading-relaxed">
+                Le montant de{" "}
+                <strong className="text-foreground font-semibold">
+                  {formatAmount(deletingItem.amount, currency)}
+                </strong>{" "}
+                sera retiré de vos calculs et du bilan.
+              </p>
+            </div>
+
+            <div className="space-y-2 pt-2">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={handleDeleteConfirm}
+                className="w-full py-3 px-4 rounded-xl bg-danger text-white text-xs font-bold hover:opacity-90 touch-target transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isDeleting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  "Confirmer la suppression"
+                )}
+              </button>
+
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setDeletingItem(null)}
+                className="w-full py-2.5 px-4 rounded-xl bg-card border border-line text-foreground text-xs font-bold hover:bg-card-secondary touch-target transition-colors"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
