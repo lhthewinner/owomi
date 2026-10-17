@@ -131,6 +131,45 @@ export default function HomePage() {
     };
   }, []);
 
+  // Synchronisation de l'historique de navigation du navigateur / smartphone (touche Retour physique ou geste)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.history.replaceState({ view, authTab, activeTab }, "");
+    }
+
+    const handlePopState = (e: PopStateEvent) => {
+      const state = e.state;
+      if (!state) return;
+      if (state.view) setView(state.view);
+      if (state.authTab) setAuthTab(state.authTab);
+      if (state.activeTab) setActiveTab(state.activeTab);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  const navigateToView = (nextView: ActiveView, nextAuthTab?: "signup" | "login") => {
+    setView(nextView);
+    if (nextAuthTab) setAuthTab(nextAuthTab);
+    if (typeof window !== "undefined") {
+      window.history.pushState(
+        { view: nextView, authTab: nextAuthTab || authTab, activeTab },
+        ""
+      );
+    }
+  };
+
+  const navigateToTab = (nextTab: NavTab | "profile") => {
+    setActiveTab(nextTab);
+    if (typeof window !== "undefined") {
+      window.history.pushState(
+        { view, authTab, activeTab: nextTab },
+        ""
+      );
+    }
+  };
+
   const toggleTheme = () => {
     const nextTheme = !isDark;
     setIsDark(nextTheme);
@@ -227,10 +266,7 @@ export default function HomePage() {
             <div className="space-y-3 pb-2">
               <button
                 type="button"
-                onClick={() => {
-                  setAuthTab("signup");
-                  setView("auth");
-                }}
+                onClick={() => navigateToView("auth", "signup")}
                 className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-primary to-primary-dark text-white font-bold text-[15px] shadow-lg shadow-primary/25 flex items-center justify-center gap-2 hover:opacity-95 touch-target transition-all"
               >
                 <span>{content.welcome.btnSignup}</span>
@@ -239,10 +275,7 @@ export default function HomePage() {
 
               <button
                 type="button"
-                onClick={() => {
-                  setAuthTab("login");
-                  setView("auth");
-                }}
+                onClick={() => navigateToView("auth", "login")}
                 className="w-full py-3.5 px-6 rounded-2xl bg-card border border-line text-foreground font-bold text-[15px] hover:bg-card-secondary touch-target transition-colors"
               >
                 {content.welcome.btnLogin}
@@ -261,9 +294,20 @@ export default function HomePage() {
           <div className="p-6 sm:p-7">
             <AuthCard
               initialTab={authTab}
-              onBack={() => setView("welcome")}
-              onGoForgot={() => setView("forgot")}
-              onSuccessLogin={() => setView("authenticated")}
+              onBack={() => {
+                if (typeof window !== "undefined" && window.history.length > 1) {
+                  window.history.back();
+                } else {
+                  navigateToView("welcome");
+                }
+              }}
+              onGoForgot={() => navigateToView("forgot")}
+              onSuccessLogin={() => {
+                setView("authenticated");
+                if (typeof window !== "undefined") {
+                  window.history.replaceState({ view: "authenticated", activeTab: "dashboard" }, "");
+                }
+              }}
             />
           </div>
         )}
@@ -273,8 +317,11 @@ export default function HomePage() {
           <div className="p-6 sm:p-7">
             <ForgotPasswordCard
               onBack={() => {
-                setAuthTab("login");
-                setView("auth");
+                if (typeof window !== "undefined" && window.history.length > 1) {
+                  window.history.back();
+                } else {
+                  navigateToView("auth", "login");
+                }
               }}
             />
           </div>
@@ -301,9 +348,9 @@ export default function HomePage() {
                     setAddMode("exp");
                     setIsAddOpen(true);
                   }}
-                  onGoToBilan={() => setActiveTab("bilan")}
-                  onGoToHistory={() => setActiveTab("history")}
-                  onGoToProfile={() => setActiveTab("profile")}
+                  onGoToBilan={() => navigateToTab("bilan")}
+                  onGoToHistory={() => navigateToTab("history")}
+                  onGoToProfile={() => navigateToTab("profile")}
                   onShowToast={(msg) => setToastMessage(msg)}
                   refreshTrigger={refreshTrigger}
                 />
@@ -340,7 +387,13 @@ export default function HomePage() {
                   currentUser={currentUser}
                   isDark={isDark}
                   onToggleTheme={toggleTheme}
-                  onBack={() => setActiveTab("dashboard")}
+                  onBack={() => {
+                    if (typeof window !== "undefined" && window.history.length > 1) {
+                      window.history.back();
+                    } else {
+                      navigateToTab("dashboard");
+                    }
+                  }}
                   onLogout={handleLogout}
                   onDeletedAccount={handleDeletedAccount}
                   onShowToast={(msg) => setToastMessage(msg)}
@@ -370,7 +423,7 @@ export default function HomePage() {
             {activeTab !== "profile" && (
               <BottomNav
                 activeTab={activeTab}
-                onChangeTab={(tab) => setActiveTab(tab)}
+                onChangeTab={(tab) => navigateToTab(tab)}
                 onOpenAdd={() => {
                   setPayPlannedId(null);
                   setAddMode("exp");

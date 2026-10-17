@@ -1,6 +1,6 @@
 # Rapport de Test Visuel — Application Asoro
 
-*Généré le 17/10/2026 12:33:03*
+*Généré le 17/10/2026 13:46:27*
 
 Ce dossier regroupe les captures d'écran réelles issues des tests automatiques sur l'ensemble des écrans et fonctionnalités de l'application Asoro.
 

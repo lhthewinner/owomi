@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { content } from "@/content/fr";
 import { deleteAccountAction } from "@/lib/auth/actions";
+import { useMobileBackHandler } from "@/lib/utils/useMobileBackHandler";
 
 interface DeleteAccountModalProps {
   isOpen: boolean;
@@ -18,6 +19,9 @@ export function DeleteAccountModal({
 }: DeleteAccountModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Fermeture automatique lors de l'appui sur le bouton/geste Retour du smartphone
+  useMobileBackHandler(isOpen, onClose);
 
   useEffect(() => {
     if (!isOpen) return;

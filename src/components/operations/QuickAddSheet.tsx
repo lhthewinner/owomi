@@ -21,6 +21,7 @@ import {
   createLoanAction,
   getActivePlannedExpensesAction,
 } from "@/lib/operations/actions";
+import { useMobileBackHandler } from "@/lib/utils/useMobileBackHandler";
 
 export type OperationMode = "exp" | "inc" | "loan";
 
@@ -56,6 +57,9 @@ export function QuickAddSheet({
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Fermeture automatique lors de l'appui sur le bouton/geste Retour du smartphone
+  useMobileBackHandler(isOpen, onClose);
 
   // Synchronise le mode initial et charge les dépenses prévues actives
   useEffect(() => {

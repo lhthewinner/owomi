@@ -9,6 +9,7 @@ import {
   updatePlannedExpenseAction,
   type PlannedExpenseWithProgress,
 } from "@/lib/operations/actions";
+import { useMobileBackHandler } from "@/lib/utils/useMobileBackHandler";
 
 interface PlannedExpenseModalProps {
   isOpen: boolean;
@@ -34,6 +35,9 @@ export function PlannedExpenseModal({
   const [startDate, setStartDate] = useState<string>(() => getTodayDateString(userTimezone));
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Fermeture automatique lors de l'appui sur le bouton/geste Retour du smartphone
+  useMobileBackHandler(isOpen, onClose);
 
   useEffect(() => {
     if (editingItem) {

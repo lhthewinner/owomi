@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, Check, Circle, AlertCircle, Loader2, MailCheck } from "lucide-react";
+import { ArrowLeft, Check, Circle, AlertCircle, Loader2, MailCheck, Eye, EyeOff } from "lucide-react";
 import { content } from "@/content/fr";
 import { passwordRules, signupSchema, loginSchema } from "@/lib/validation/auth";
 import { signUpAction, signInAction } from "@/lib/auth/actions";
@@ -26,10 +26,12 @@ export function AuthCard({
   const [suFirstname, setSuFirstname] = useState("");
   const [suEmail, setSuEmail] = useState("");
   const [suPassword, setSuPassword] = useState("");
+  const [showSuPassword, setShowSuPassword] = useState(false);
 
   // Champs Connexion
   const [liEmail, setLiEmail] = useState("");
   const [liPassword, setLiPassword] = useState("");
+  const [showLiPassword, setShowLiPassword] = useState(false);
 
   // États
   const [loading, setLoading] = useState(false);
@@ -134,12 +136,9 @@ export function AuthCard({
       </button>
 
       {/* Titres */}
-      <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
+      <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight mb-5">
         {tab === "signup" ? content.auth.signupTitle : content.auth.loginTitle}
       </h1>
-      <p className="text-muted text-[13.5px] mt-1 mb-5">
-        {content.auth.subtitle}
-      </p>
 
       {/* Sélecteur d'onglets (Inscription / Connexion) */}
       <div className="flex bg-card-secondary p-1 rounded-2xl mb-5">
@@ -253,15 +252,29 @@ export function AuthCard({
             >
               {content.auth.fieldPassword}
             </label>
-            <input
-              id="suPw"
-              type="password"
-              required
-              value={suPassword}
-              onChange={(e) => setSuPassword(e.target.value)}
-              placeholder={content.auth.placeholderPassword}
-              className="w-full px-4 py-3 rounded-xl border border-line bg-card text-foreground text-sm outline-none focus:border-primary transition-colors touch-target"
-            />
+            <div className="relative">
+              <input
+                id="suPw"
+                type={showSuPassword ? "text" : "password"}
+                required
+                value={suPassword}
+                onChange={(e) => setSuPassword(e.target.value)}
+                placeholder={content.auth.placeholderPassword}
+                className="w-full pl-4 pr-11 py-3 rounded-xl border border-line bg-card text-foreground text-sm outline-none focus:border-primary transition-colors touch-target"
+              />
+              <button
+                type="button"
+                onClick={() => setShowSuPassword(!showSuPassword)}
+                aria-label={showSuPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg text-muted hover:text-foreground flex items-center justify-center touch-target transition-colors"
+              >
+                {showSuPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
+            </div>
 
             {/* Liste en direct des règles du mot de passe */}
             <ul className="mt-2.5 space-y-1.5 px-1" aria-label="Règles du mot de passe">
@@ -330,15 +343,29 @@ export function AuthCard({
             >
               {content.auth.fieldPassword}
             </label>
-            <input
-              id="liPw"
-              type="password"
-              required
-              value={liPassword}
-              onChange={(e) => setLiPassword(e.target.value)}
-              placeholder={content.auth.placeholderPasswordLogin}
-              className="w-full px-4 py-3 rounded-xl border border-line bg-card text-foreground text-sm outline-none focus:border-primary transition-colors touch-target"
-            />
+            <div className="relative">
+              <input
+                id="liPw"
+                type={showLiPassword ? "text" : "password"}
+                required
+                value={liPassword}
+                onChange={(e) => setLiPassword(e.target.value)}
+                placeholder={content.auth.placeholderPasswordLogin}
+                className="w-full pl-4 pr-11 py-3 rounded-xl border border-line bg-card text-foreground text-sm outline-none focus:border-primary transition-colors touch-target"
+              />
+              <button
+                type="button"
+                onClick={() => setShowLiPassword(!showLiPassword)}
+                aria-label={showLiPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg text-muted hover:text-foreground flex items-center justify-center touch-target transition-colors"
+              >
+                {showLiPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
+            </div>
             <div className="text-right mt-1.5">
               <button
                 type="button"
