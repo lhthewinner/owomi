@@ -17,7 +17,17 @@ import {
   getTodayDateString,
   getCurrentWeekRange,
   getCurrentMonthRange,
+  shiftDate,
 } from "@/lib/utils/date";
+import {
+  calculateBalance,
+  calculatePlannedExpenseProgress,
+  type PeriodType,
+  type BalanceResult,
+  type ExpenseItem,
+  type IncomeItem,
+  type LoanItem,
+} from "@/lib/balance/calculator";
 import type { Database } from "@/types/database";
 
 type OperationResult<T = unknown> = {
@@ -486,32 +496,37 @@ export async function getDashboardDataAction(): Promise<OperationResult<Dashboar
   const incomes = incRes.data || [];
   const loans = loanRes.data || [];
 
-  // 1. Reste ce mois-ci (formule : salaire + gains + prêts empruntés − prêts accordés − dépenses)
-  const monthSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
-  const monthGain = incomes.reduce((sum, i) => sum + i.amount, 0);
-  const monthLoansIn = loans
-    .filter((l) => l.direction === "borrowed")
-    .reduce((sum, l) => sum + l.amount, 0);
-  const monthLoansOut = loans
-    .filter((l) => l.direction === "given")
-    .reduce((sum, l) => sum + l.amount, 0);
-  const restOfMonth = salary + monthGain + monthLoansIn - monthLoansOut - monthSpent;
+  // 1. Reste du mois et totaux calculés via le module unique de bilan
+  const monthCalc = calculateBalance({
+    period: "month",
+    referenceDate: todayStr,
+    salary,
+    expenses,
+    incomes,
+    loans,
+  });
+  const todayCalc = calculateBalance({
+    period: "day",
+    referenceDate: todayStr,
+    salary,
+    expenses,
+    incomes,
+    loans,
+  });
+  const weekCalc = calculateBalance({
+    period: "week",
+    referenceDate: todayStr,
+    salary,
+    expenses,
+    incomes,
+    loans,
+  });
 
-  // 2. Jour
-  const todaySpent = expenses
-    .filter((e) => e.date === todayStr)
-    .reduce((sum, e) => sum + e.amount, 0);
-  const todayGain = incomes
-    .filter((i) => i.date === todayStr)
-    .reduce((sum, i) => sum + i.amount, 0);
-
-  // 3. Semaine
-  const weekSpent = expenses
-    .filter((e) => e.date >= weekRange.start && e.date <= weekRange.end)
-    .reduce((sum, e) => sum + e.amount, 0);
-  const weekGain = incomes
-    .filter((i) => i.date >= weekRange.start && i.date <= weekRange.end)
-    .reduce((sum, i) => sum + i.amount, 0);
+  const restOfMonth = monthCalc.balance;
+  const todaySpent = todayCalc.totalSpent;
+  const todayGain = todayCalc.totalGain;
+  const weekSpent = weekCalc.totalSpent;
+  const weekGain = weekCalc.totalGain;
 
   // 4. Dernières opérations (jusqu'à 5)
   const recentOpsRes = await getRecentOperationsAction(5);
@@ -702,19 +717,10 @@ export async function getPlannedExpensesWithProgressAction(): Promise<
       .filter((e) => e.planned_expense_id === p.id)
       .reduce((sum, e) => sum + e.amount, 0);
 
-    let status: PlannedExpenseStatus = "venir";
-    if (spent === 0) {
-      status = "venir";
-    } else if (spent > p.amount) {
-      status = "depasse";
-    } else if (spent === p.amount) {
-      status = "solde";
-    } else {
-      status = "cours";
-    }
-
-    const left = Math.max(0, p.amount - spent);
-    const progressPercent = Math.min(100, Math.round((spent / p.amount) * 100));
+    const { status, left, progressPercent } = calculatePlannedExpenseProgress(
+      p.amount,
+      spent
+    );
 
     return {
       id: p.id,
@@ -767,3 +773,98 @@ export async function getActivePlannedExpensesAction(): Promise<
 
   return { success: true, data: active };
 }
+
+export type BalanceDataResponse = BalanceResult & {
+  currency: string;
+};
+
+/**
+ * Récupération du bilan complet pour l'écran Bilan (Stories B1, B2, B3).
+ * Calculé en direct à tout moment via le module central calculator.ts.
+ */
+export async function getBalanceDataAction(
+  period: PeriodType = "day",
+  referenceDate?: string
+): Promise<OperationResult<BalanceDataResponse>> {
+  const supabase = await createServerSideClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, message: content.auth.errors.invalidCredentials };
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("currency, monthly_salary, timezone")
+    .eq("id", user.id)
+    .single();
+
+  const timezone = profile?.timezone || "Africa/Porto-Novo";
+  const currency = profile?.currency || "FCFA";
+  const salary = profile?.monthly_salary || 0;
+
+  const targetDate = referenceDate || getTodayDateString(timezone);
+
+  // Plage de dates requêtée en base pour couvrir les totaux et le graphique d'évolution
+  let queryStart: string;
+  let queryEnd: string;
+
+  if (period === "day") {
+    // 7 derniers jours se terminant par targetDate
+    queryStart = shiftDate(targetDate, "day", -6);
+    queryEnd = targetDate;
+  } else if (period === "week") {
+    const wk = getCurrentWeekRange(targetDate);
+    queryStart = wk.start;
+    queryEnd = wk.end;
+  } else {
+    const mo = getCurrentMonthRange(targetDate);
+    queryStart = mo.start;
+    queryEnd = mo.end;
+  }
+
+  const [expRes, incRes, loanRes] = await Promise.all([
+    supabase
+      .from("expenses")
+      .select("id, amount, category, date, note, planned_expense_id")
+      .eq("user_id", user.id)
+      .gte("date", queryStart)
+      .lte("date", queryEnd),
+    supabase
+      .from("incomes")
+      .select("id, amount, source, date")
+      .eq("user_id", user.id)
+      .gte("date", queryStart)
+      .lte("date", queryEnd),
+    supabase
+      .from("loans")
+      .select("id, amount, direction, counterpart, date, note")
+      .eq("user_id", user.id)
+      .gte("date", queryStart)
+      .lte("date", queryEnd),
+  ]);
+
+  const expenses = (expRes.data || []) as ExpenseItem[];
+  const incomes = (incRes.data || []) as IncomeItem[];
+  const loans = (loanRes.data || []) as LoanItem[];
+
+  const balanceResult = calculateBalance({
+    period,
+    referenceDate: targetDate,
+    salary,
+    expenses,
+    incomes,
+    loans,
+  });
+
+  return {
+    success: true,
+    data: {
+      ...balanceResult,
+      currency,
+    },
+  };
+}
+

@@ -13,6 +13,7 @@ import {
   type OperationMode,
 } from "@/components/operations/QuickAddSheet";
 import { BudgetView } from "@/components/operations/BudgetView";
+import { BalanceView } from "@/components/balance/BalanceView";
 import { ProfileView } from "@/components/profile/ProfileView";
 import { Toast } from "@/components/ui/Toast";
 import { createClient } from "@/lib/supabase/client";
@@ -273,26 +274,10 @@ export default function HomePage() {
               )}
 
               {activeTab === "bilan" && (
-                <div className="flex flex-col items-center justify-center min-h-[460px] text-center p-4 space-y-4 animate-fadeIn">
-                  <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
-                    <Wallet className="w-7 h-7" />
-                  </div>
-                  <div>
-                    <h2 className="text-base font-extrabold text-foreground">
-                      Bilan complet (Lot 5)
-                    </h2>
-                    <p className="text-xs text-muted max-w-[260px] mx-auto mt-1 leading-relaxed">
-                      Le calcul du bilan direct (jour, semaine, mois) et l&apos;analyse prévu vs imprévu seront activés dans le Lot 5.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("dashboard")}
-                    className="py-2.5 px-4 rounded-xl bg-card border border-line text-xs font-bold text-foreground hover:bg-card-secondary touch-target transition-colors"
-                  >
-                    Retour au tableau de bord
-                  </button>
-                </div>
+                <BalanceView
+                  onShowToast={(msg) => setToastMessage(msg)}
+                  refreshTrigger={refreshTrigger}
+                />
               )}
 
               {activeTab === "history" && (
