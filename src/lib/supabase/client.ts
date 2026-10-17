@@ -1,4 +1,5 @@
 import { createBrowserClient } from "@supabase/ssr";
+import type { Database } from "@/types/database";
 
 /**
  * Client Supabase pour les composants exécutés côté navigateur.
@@ -11,13 +12,13 @@ export function createClient() {
 
   if (!supabaseUrl || !supabaseAnonKey) {
     // Si les variables ne sont pas encore configurées (ex: premier démarrage local sans .env.local),
-    // on lève une exception claire pour éviter les erreurs silencieuses.
+    // on avertit pour éviter les erreurs silencieuses.
     console.warn(
       "Variables d'environnement Supabase manquantes. Vérifiez votre fichier .env.local."
     );
   }
 
-  return createBrowserClient(
+  return createBrowserClient<Database>(
     supabaseUrl || "https://placeholder.supabase.co",
     supabaseAnonKey || "placeholder-anon-key"
   );
