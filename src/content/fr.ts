@@ -59,6 +59,24 @@ export const content = {
       invalidCredentials: "Email ou mot de passe incorrect.",
       emailNotVerified: "Veuillez valider votre adresse email avant de vous connecter.",
       passwordRuleFailed: "Le mot de passe ne respecte pas tous les critères de sécurité.",
+      emailAlreadyUsed: "Cette adresse email est déjà utilisée.",
+      rateLimitExceeded: "Trop de tentatives. Veuillez patienter un instant avant de réessayer.",
+    },
+    success: {
+      signupConfirmationSent:
+        "Compte créé avec succès ! Un lien de confirmation a été envoyé à votre adresse email. Veuillez cliquer dessus pour activer votre compte avant de vous connecter.",
+      resetLinkSent:
+        "Si cette adresse est enregistrée, un lien de réinitialisation vous a été envoyé par email.",
+      accountDeleted:
+        "Votre compte et toutes vos données ont été définitivement supprimés.",
+    },
+    deleteAccount: {
+      button: "Supprimer mon compte et mes données",
+      confirmTitle: "Supprimer définitivement votre compte ?",
+      confirmWarning:
+        "Cette action est irréversible. Toutes vos données (dépenses, revenus, prêts et bilans) seront définitivement effacées du serveur et de votre appareil.",
+      confirmButton: "Confirmer la suppression définitive",
+      cancelButton: "Annuler",
     },
   },
   sync: {
