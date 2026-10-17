@@ -363,5 +363,91 @@ describe("Module unique de calcul du bilan (calculator.ts)", () => {
     expect(groups[1].totalExpenses).toBe(3000);
     expect(groups[1].totalIncomes).toBe(0);
   });
+
+  // 10. Vue Semestre (6 mois)
+  it("calcule avec exactitude le bilan semestriel sur 6 mois", () => {
+    const expenses: ExpenseItem[] = [
+      { id: "e1", amount: 50000, category: "Alimentation", date: "2026-08-10" },
+      { id: "e2", amount: 30000, category: "Transport", date: "2026-09-15" },
+    ];
+    const incomes: IncomeItem[] = [
+      { id: "i1", amount: 20000, date: "2026-08-20" },
+    ];
+
+    const res = calculateBalance({
+      period: "semester",
+      referenceDate: "2026-10-17", // S2 2026 (juillet à décembre)
+      salary: 100000, // Salaire mensuel 100 000 F -> 600 000 F sur le semestre
+      expenses,
+      incomes,
+      loans: [],
+    });
+
+    expect(res.range.start).toBe("2026-07-01");
+    expect(res.range.end).toBe("2026-12-31");
+    expect(res.range.formattedLabel).toBe("2nd semestre 2026");
+    expect(res.totalSpent).toBe(80000);
+    expect(res.totalGain).toBe(20000);
+    // Solde : (100 000 * 6) + 20 000 - 80 000 = 540 000
+    expect(res.balance).toBe(540000);
+    expect(res.isNegative).toBe(false);
+    expect(res.balanceLabel).toBe("Économisé sur 6 mois");
+    expect(res.evolution.length).toBe(6);
+    expect(res.evolution[0].label).toBe("Juil");
+    expect(res.evolution[5].label).toBe("Déc");
+  });
+
+  // 11. Vue Année (1 an)
+  it("calcule avec exactitude le bilan annuel sur 12 mois", () => {
+    const expenses: ExpenseItem[] = [
+      { id: "e1", amount: 120000, category: "Loyer", date: "2026-02-01" },
+      { id: "e2", amount: 80000, category: "Factures", date: "2026-11-15" },
+    ];
+    const incomes: IncomeItem[] = [
+      { id: "i1", amount: 50000, date: "2026-05-10" },
+    ];
+
+    const res = calculateBalance({
+      period: "year",
+      referenceDate: "2026-10-17", // Année 2026
+      salary: 100000, // Salaire mensuel 100 000 F -> 1 200 000 F sur l'année
+      expenses,
+      incomes,
+      loans: [],
+    });
+
+    expect(res.range.start).toBe("2026-01-01");
+    expect(res.range.end).toBe("2026-12-31");
+    expect(res.range.formattedLabel).toBe("Année 2026");
+    expect(res.totalSpent).toBe(200000);
+    expect(res.totalGain).toBe(50000);
+    // Solde : (100 000 * 12) + 50 000 - 200 000 = 1 050 000
+    expect(res.balance).toBe(1050000);
+    expect(res.isNegative).toBe(false);
+    expect(res.balanceLabel).toBe("Économisé cette année");
+    expect(res.evolution.length).toBe(12);
+    expect(res.evolution[0].label).toBe("J"); // Janvier
+    expect(res.evolution[11].label).toBe("D"); // Décembre
+  });
+
+  // 12. Solde négatif sur semestre et année
+  it("gère un solde annuel ou semestriel négatif sans blocage", () => {
+    const expenses: ExpenseItem[] = [
+      { id: "e1", amount: 800000, category: "Santé", date: "2026-04-10" },
+    ];
+
+    const resSem = calculateBalance({
+      period: "semester",
+      referenceDate: "2026-03-15", // S1 2026
+      salary: 50000, // 300 000 F sur 6 mois
+      expenses,
+      incomes: [],
+      loans: [],
+    });
+
+    expect(resSem.balance).toBe(-500000);
+    expect(resSem.isNegative).toBe(true);
+    expect(resSem.balanceNote).toBe("Solde négatif, aucun blocage");
+  });
 });
 

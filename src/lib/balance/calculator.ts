@@ -17,7 +17,7 @@ import {
   formatDateFrench,
 } from "@/lib/utils/date";
 
-export type PeriodType = "day" | "week" | "month";
+export type PeriodType = "day" | "week" | "month" | "semester" | "year";
 
 export interface ExpenseItem {
   id: string;
@@ -96,6 +96,21 @@ export interface BalanceResult {
 }
 
 const DAY_INITIALS = ["D", "L", "M", "M", "J", "V", "S"];
+const MONTH_INITIALS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
+const MONTH_SHORT_NAMES = [
+  "Jan",
+  "Fév",
+  "Mar",
+  "Avr",
+  "Mai",
+  "Juin",
+  "Juil",
+  "Août",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Déc",
+];
 
 /**
  * Calcul complet du bilan pour une période donnée (jour, semaine, mois).
@@ -147,7 +162,19 @@ export function calculateBalance(input: BalanceCalculationInput): BalanceResult 
   let balanceLabel: string;
   let balanceNote: string;
 
-  if (period === "month") {
+  if (period === "year") {
+    // Formule annuelle : (Salaire * 12) + autres revenus + prêts nets - total dépensé
+    balance = salary * 12 + totalGain + netLoans - totalSpent;
+    balanceLabel = "Économisé cette année";
+    balanceNote =
+      balance < 0 ? "Solde négatif, aucun blocage" : "Salaires (12 mois) et prêts inclus";
+  } else if (period === "semester") {
+    // Formule semestrielle : (Salaire * 6) + autres revenus + prêts nets - total dépensé
+    balance = salary * 6 + totalGain + netLoans - totalSpent;
+    balanceLabel = "Économisé sur 6 mois";
+    balanceNote =
+      balance < 0 ? "Solde négatif, aucun blocage" : "Salaires (6 mois) et prêts inclus";
+  } else if (period === "month") {
     // Formule mensuelle : Salaire + autres revenus + prêts nets - total dépensé
     balance = salary + totalGain + netLoans - totalSpent;
     balanceLabel = "Économisé ce mois";
@@ -249,7 +276,7 @@ export function calculateBalance(input: BalanceCalculationInput): BalanceResult 
         gainedHeightPercent: 0,
       });
     }
-  } else {
+  } else if (period === "month") {
     // Pour la vue Mois : tous les jours du mois
     const [y, m] = range.start.split("-").map(Number);
     const lastDayNum = new Date(y, m, 0).getDate();
@@ -270,6 +297,49 @@ export function calculateBalance(input: BalanceCalculationInput): BalanceResult 
       evolution.push({
         date: dayStr,
         label,
+        spent,
+        gained,
+        spentHeightPercent: 0,
+        gainedHeightPercent: 0,
+      });
+    }
+  } else if (period === "semester") {
+    // Pour la vue Semestre : les 6 mois du semestre
+    const [y, m] = range.start.split("-").map(Number);
+    for (let i = 0; i < 6; i++) {
+      const monthNum = m + i;
+      const monthStr = `${y}-${pad(monthNum)}`;
+      const spent = expenses
+        .filter((e) => e.date.startsWith(monthStr))
+        .reduce((sum, e) => sum + e.amount, 0);
+      const gained = incomes
+        .filter((i) => i.date.startsWith(monthStr))
+        .reduce((sum, i) => sum + i.amount, 0);
+
+      evolution.push({
+        date: `${monthStr}-01`,
+        label: MONTH_SHORT_NAMES[monthNum - 1] || "",
+        spent,
+        gained,
+        spentHeightPercent: 0,
+        gainedHeightPercent: 0,
+      });
+    }
+  } else {
+    // Pour la vue Année : les 12 mois de l'année
+    const [y] = range.start.split("-").map(Number);
+    for (let monthNum = 1; monthNum <= 12; monthNum++) {
+      const monthStr = `${y}-${pad(monthNum)}`;
+      const spent = expenses
+        .filter((e) => e.date.startsWith(monthStr))
+        .reduce((sum, e) => sum + e.amount, 0);
+      const gained = incomes
+        .filter((i) => i.date.startsWith(monthStr))
+        .reduce((sum, i) => sum + i.amount, 0);
+
+      evolution.push({
+        date: `${monthStr}-01`,
+        label: MONTH_INITIALS[monthNum - 1] || "",
         spent,
         gained,
         spentHeightPercent: 0,
