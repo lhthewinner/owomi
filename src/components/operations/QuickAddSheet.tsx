@@ -13,6 +13,7 @@ import {
 import { formatAmount } from "@/lib/utils/currency";
 import { DEFAULT_CATEGORIES } from "@/lib/constants/categories";
 import { getTodayDateString, generateLocalId } from "@/lib/utils/date";
+import { enqueueOfflineOperation } from "@/lib/offline/sync";
 import {
   createExpenseAction,
   createIncomeAction,
@@ -24,6 +25,7 @@ export type OperationMode = "exp" | "inc" | "loan";
 
 interface QuickAddSheetProps {
   isOpen: boolean;
+  userId?: string;
   initialMode?: OperationMode;
   initialPlannedExpenseId?: string | null;
   currency?: string;
@@ -34,6 +36,7 @@ interface QuickAddSheetProps {
 
 export function QuickAddSheet({
   isOpen,
+  userId,
   initialMode = "exp",
   initialPlannedExpenseId = null,
   currency = "FCFA",
@@ -99,7 +102,74 @@ export function QuickAddSheet({
     setError(null);
 
     const localId = generateLocalId();
+    const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
 
+    // 1. Sauvegarde directe dans la file d'attente si hors ligne (Story O1 & règle 7)
+    if (isOffline && userId) {
+      try {
+        if (mode === "exp") {
+          await enqueueOfflineOperation({
+            localId,
+            userId,
+            type: "create_expense",
+            payload: {
+              amount,
+              category: selectedCat,
+              date,
+              note: counterpartOrSource.trim(),
+              plannedExpenseId: selectedPlannedId,
+              localId,
+            },
+          });
+          onSuccess(
+            selectedPlannedId
+              ? "✓ Règlement enregistré hors ligne (en attente d'envoi)"
+              : "✓ Dépense enregistrée hors ligne (en attente d'envoi)"
+          );
+        } else if (mode === "inc") {
+          await enqueueOfflineOperation({
+            localId,
+            userId,
+            type: "create_income",
+            payload: {
+              amount,
+              source: counterpartOrSource.trim() || "Revenu hors salaire",
+              date,
+              localId,
+            },
+          });
+          onSuccess("✓ Revenu enregistré hors ligne (en attente d'envoi)");
+        } else {
+          if (!counterpartOrSource.trim()) {
+            setError("Indiquez la personne ou l'organisme pour ce prêt.");
+            setLoading(false);
+            return;
+          }
+          await enqueueOfflineOperation({
+            localId,
+            userId,
+            type: "create_loan",
+            payload: {
+              amount,
+              direction: loanDir,
+              counterpart: counterpartOrSource.trim(),
+              date,
+              note: "",
+              localId,
+            },
+          });
+          onSuccess("✓ Prêt enregistré hors ligne (en attente d'envoi)");
+        }
+        setAmountStr("");
+        setCounterpartOrSource("");
+        onClose();
+        return;
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // 2. Sauvegarde en ligne avec repli de sécurité si coupure réseau
     try {
       if (mode === "exp") {
         const res = await createExpenseAction({
@@ -168,7 +238,56 @@ export function QuickAddSheet({
       setCounterpartOrSource("");
       onClose();
     } catch {
-      setError("Une erreur inattendue est survenue.");
+      // Repli immédiat en file d'attente locale pour ne rien perdre en cas de perte de connexion
+      if (userId) {
+        if (mode === "exp") {
+          await enqueueOfflineOperation({
+            localId,
+            userId,
+            type: "create_expense",
+            payload: {
+              amount,
+              category: selectedCat,
+              date,
+              note: counterpartOrSource.trim(),
+              plannedExpenseId: selectedPlannedId,
+              localId,
+            },
+          });
+        } else if (mode === "inc") {
+          await enqueueOfflineOperation({
+            localId,
+            userId,
+            type: "create_income",
+            payload: {
+              amount,
+              source: counterpartOrSource.trim() || "Revenu hors salaire",
+              date,
+              localId,
+            },
+          });
+        } else {
+          await enqueueOfflineOperation({
+            localId,
+            userId,
+            type: "create_loan",
+            payload: {
+              amount,
+              direction: loanDir,
+              counterpart: counterpartOrSource.trim(),
+              date,
+              note: "",
+              localId,
+            },
+          });
+        }
+        setAmountStr("");
+        setCounterpartOrSource("");
+        onSuccess("✓ Enregistré hors ligne (en attente d'envoi)");
+        onClose();
+      } else {
+        setError("Une erreur inattendue est survenue.");
+      }
     } finally {
       setLoading(false);
     }

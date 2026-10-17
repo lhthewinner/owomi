@@ -17,6 +17,8 @@ import { BalanceView } from "@/components/balance/BalanceView";
 import { HistoryView } from "@/components/history/HistoryView";
 import { ProfileView } from "@/components/profile/ProfileView";
 import { Toast } from "@/components/ui/Toast";
+import { SyncStatusBanner } from "@/components/offline/SyncStatusBanner";
+import { clearAllLocalData } from "@/lib/offline/sync";
 import { createClient } from "@/lib/supabase/client";
 import { signOutAction } from "@/lib/auth/actions";
 import type { User } from "@supabase/supabase-js";
@@ -45,11 +47,11 @@ export default function HomePage() {
     setIsDark(initialDark);
     document.documentElement.setAttribute("data-theme", initialDark ? "dark" : "light");
 
-    // Vérification d'une session existante
+    // Vérification d'une session existante (persistance hors ligne via getSession)
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        setCurrentUser(user);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setCurrentUser(session.user);
         setView("authenticated");
       }
     });
@@ -60,7 +62,7 @@ export default function HomePage() {
       if (session?.user) {
         setCurrentUser(session.user);
         setView("authenticated");
-      } else {
+      } else if (_event === "SIGNED_OUT") {
         setCurrentUser(null);
       }
     });
@@ -78,6 +80,7 @@ export default function HomePage() {
   };
 
   const handleLogout = async () => {
+    await clearAllLocalData();
     await signOutAction();
     setCurrentUser(null);
     setView("welcome");
@@ -85,7 +88,8 @@ export default function HomePage() {
     setToastMessage("Vous êtes déconnecté.");
   };
 
-  const handleDeletedAccount = () => {
+  const handleDeletedAccount = async () => {
+    await clearAllLocalData();
     setCurrentUser(null);
     setView("welcome");
     setActiveTab("dashboard");
@@ -220,6 +224,13 @@ export default function HomePage() {
         {/* 4. ÉCRAN CONNECTÉ AVEC ONGLETS */}
         {view === "authenticated" && currentUser && (
           <div className="flex flex-col h-full justify-between">
+            {/* Bandeau d'état de synchronisation hors ligne (Story O2 & règle 7) */}
+            <SyncStatusBanner
+              userId={currentUser.id}
+              onSyncComplete={() => setRefreshTrigger((t) => t + 1)}
+              refreshTrigger={refreshTrigger}
+            />
+
             {/* Contenu de l'onglet actif */}
             <div className="p-5 sm:p-6 flex-1">
               {activeTab === "dashboard" && (
@@ -313,6 +324,7 @@ export default function HomePage() {
         {/* 5. Feuille d'ajout rapide (QuickAddSheet) */}
         <QuickAddSheet
           isOpen={isAddOpen}
+          userId={currentUser?.id}
           initialMode={addMode}
           initialPlannedExpenseId={payPlannedId}
           onClose={() => {
