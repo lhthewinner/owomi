@@ -109,12 +109,24 @@ export default function HomePage() {
         setView("authenticated");
         setIsPinUnlocked(urlParams.get("lockPin") !== "1");
 
-        const tabParam = urlParams.get("tab") as NavTab | "profile" | "admin";
-        if (tabParam === "admin" || urlParams.get("admin") === "1") {
+        const roleParam = urlParams.get("role");
+        if (roleParam === "user") {
+          document.cookie = "asoro_demo_role=user; path=/";
+        } else if (roleParam === "admin") {
+          document.cookie = "asoro_demo_role=admin; path=/";
+        }
+
+        const tabParam = urlParams.get("tab");
+        if (roleParam === "user") {
+          if (tabParam && ["dashboard", "budget", "bilan", "history", "profile"].includes(tabParam)) {
+            setActiveTab(tabParam as NavTab | "profile");
+          }
+          setInitialShowAdmin(false);
+        } else if (tabParam === "admin" || urlParams.get("admin") === "1") {
           setActiveTab("profile");
           setInitialShowAdmin(true);
         } else if (tabParam && ["dashboard", "budget", "bilan", "history", "profile"].includes(tabParam)) {
-          setActiveTab(tabParam);
+          setActiveTab(tabParam as NavTab | "profile");
           setInitialShowAdmin(false);
         }
         const subParam = urlParams.get("subtab") as "planned" | "income";

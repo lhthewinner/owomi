@@ -92,6 +92,14 @@ export async function getAdminDataAction(): Promise<AdminActionResult<AdminDataR
   const isDemo = cookieStore.get("asoro_demo")?.value === "true";
 
   if (isDemo) {
+    const demoRole = cookieStore.get("asoro_demo_role")?.value;
+    if (demoRole === "user") {
+      return {
+        success: false,
+        message: "Accès refusé : vous devez posséder le rôle administrateur.",
+      };
+    }
+
     // Mode démo : récupération des statuts modifiés localement
     let customStatuses: Record<string, UserStatus> = {};
     try {
@@ -224,6 +232,11 @@ export async function updateUserStatusAction(
   const isDemo = cookieStore.get("asoro_demo")?.value === "true";
 
   if (isDemo) {
+    const demoRole = cookieStore.get("asoro_demo_role")?.value;
+    if (demoRole === "user") {
+      return { success: false, message: "Action refusée : réservée aux administrateurs." };
+    }
+
     if (targetUserId === "usr-admin-1") {
       return { success: false, message: "Impossible de modifier le compte de l'administrateur principal." };
     }
@@ -291,8 +304,8 @@ export async function checkIsAdminAction(): Promise<boolean> {
   const isDemo = cookieStore.get("asoro_demo")?.value === "true";
 
   if (isDemo) {
-    // En démo, l'option admin est activable ou accessible
-    return true;
+    const demoRole = cookieStore.get("asoro_demo_role")?.value;
+    return demoRole !== "user";
   }
 
   const supabase = await createServerSideClient();
@@ -309,4 +322,12 @@ export async function checkIsAdminAction(): Promise<boolean> {
     .single();
 
   return data?.role === "admin" && data?.status === "active";
+}
+
+/**
+ * Permet de basculer entre le rôle utilisateur standard et administrateur en mode démo.
+ */
+export async function setDemoRoleAction(role: "user" | "admin"): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.set("asoro_demo_role", role, { path: "/", maxAge: 3600 * 24 });
 }

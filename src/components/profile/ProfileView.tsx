@@ -19,7 +19,7 @@ import {
   getProfilePreferencesAction,
   updateCurrencyAction,
 } from "@/lib/operations/actions";
-import { checkIsAdminAction } from "@/lib/admin/actions";
+import { checkIsAdminAction, setDemoRoleAction } from "@/lib/admin/actions";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { SUPPORTED_CURRENCIES } from "@/lib/utils/currency";
 import { DeleteAccountModal } from "./DeleteAccountModal";
@@ -249,6 +249,53 @@ export function ProfileView({
               <span>{isPinActive ? "Actif (Modifier)" : "Activer"}</span>
             </button>
           </div>
+
+          {/* Rôle de test (Mode Démo) */}
+          {currentUser.id === "demo-user-id" && (
+            <div className="p-4 flex items-center justify-between border-t border-line bg-card2/30">
+              <div>
+                <div className="text-xs font-bold text-foreground">
+                  Rôle de test (Démo)
+                </div>
+                <div className="text-[11px] text-muted">
+                  Basculez entre Utilisateur standard et Administrateur
+                </div>
+              </div>
+              <div className="flex items-center gap-1 bg-card border border-line p-1 rounded-xl">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await setDemoRoleAction("user");
+                    setIsAdmin(false);
+                    setShowAdminDashboard(false);
+                    onShowToast?.("Rôle actif : Utilisateur standard (accès admin masqué)");
+                  }}
+                  className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-colors ${
+                    !isAdmin
+                      ? "bg-primary text-white shadow-sm"
+                      : "text-muted hover:text-foreground"
+                  }`}
+                >
+                  Utilisateur
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await setDemoRoleAction("admin");
+                    setIsAdmin(true);
+                    onShowToast?.("Rôle actif : Administrateur (accès admin affiché)");
+                  }}
+                  className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-colors ${
+                    isAdmin
+                      ? "bg-primary text-white shadow-sm"
+                      : "text-muted hover:text-foreground"
+                  }`}
+                >
+                  Admin
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Espace Administrateur (Story AD1) */}
           {isAdmin && (

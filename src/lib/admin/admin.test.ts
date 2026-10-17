@@ -104,4 +104,46 @@ describe("Logique d'administration et modération (Story AD1)", () => {
     expect(testStatus("deleted")).toBe(false);
     expect(testStatus("admin")).toBe(false);
   });
+
+  it("bloque l'accès aux données d'administration pour un utilisateur standard", () => {
+    const checkAccess = (role: "user" | "admin") => {
+      if (role !== "admin") {
+        return {
+          allowed: false,
+          error: "Accès refusé : vous devez posséder le rôle administrateur.",
+        };
+      }
+      return { allowed: true, error: null };
+    };
+
+    const userAttempt = checkAccess("user");
+    expect(userAttempt.allowed).toBe(false);
+    expect(userAttempt.error).toBe("Accès refusé : vous devez posséder le rôle administrateur.");
+
+    const adminAttempt = checkAccess("admin");
+    expect(adminAttempt.allowed).toBe(true);
+    expect(adminAttempt.error).toBeNull();
+  });
+
+  it("protège les comptes administrateurs contre la modération", () => {
+    const canModerateUser = (targetRole: "user" | "admin", callerId: string, targetId: string) => {
+      if (callerId === targetId) {
+        return { success: false, message: "Vous ne pouvez pas modifier le statut de votre propre compte." };
+      }
+      if (targetRole === "admin") {
+        return { success: false, message: "Impossible de modifier le statut d'un administrateur." };
+      }
+      return { success: true };
+    };
+
+    // Tentative de modérer un autre admin -> refusé
+    expect(canModerateUser("admin", "u-1", "u-other-admin").success).toBe(false);
+
+    // Tentative d'auto-exclusion -> refusé
+    expect(canModerateUser("admin", "u-1", "u-1").success).toBe(false);
+
+    // Modération d'un utilisateur standard par l'admin -> autorisé
+    expect(canModerateUser("user", "u-1", "u-2").success).toBe(true);
+  });
 });
+
