@@ -66,4 +66,15 @@ describe("Validation des règles de schéma SQL et sécurité", () => {
       expect(sql).toContain(`'${cat}'`);
     });
   });
+
+  it("la migration Lot 12 définit les colonnes role, status et la fonction is_admin", () => {
+    const adminMigrationPath = path.resolve(
+      __dirname,
+      "../../supabase/migrations/20261017000002_add_admin_and_moderation.sql"
+    );
+    const adminSql = fs.readFileSync(adminMigrationPath, "utf-8");
+    expect(adminSql).toContain("role TEXT NOT NULL DEFAULT 'user'");
+    expect(adminSql).toContain("status TEXT NOT NULL DEFAULT 'active'");
+    expect(adminSql).toContain("FUNCTION public.is_admin()");
+  });
 });

@@ -11,12 +11,16 @@ import {
   Globe,
   Coins,
   KeyRound,
+  ShieldCheck,
+  ArrowRight,
 } from "lucide-react";
 import { content } from "@/content/fr";
 import {
   getProfilePreferencesAction,
   updateCurrencyAction,
 } from "@/lib/operations/actions";
+import { checkIsAdminAction } from "@/lib/admin/actions";
+import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { SUPPORTED_CURRENCIES } from "@/lib/utils/currency";
 import { DeleteAccountModal } from "./DeleteAccountModal";
 import { PinSettingsModal } from "./PinSettingsModal";
@@ -32,6 +36,7 @@ interface ProfileViewProps {
   onDeletedAccount: () => void;
   onShowToast?: (message: string) => void;
   onCurrencyChange?: () => void;
+  initialShowAdmin?: boolean;
 }
 
 export function ProfileView({
@@ -43,6 +48,7 @@ export function ProfileView({
   onDeletedAccount,
   onShowToast,
   onCurrencyChange,
+  initialShowAdmin = false,
 }: ProfileViewProps) {
   const [currency, setCurrency] = useState<string>("FCFA");
   const [isMidnightFrozen, setIsMidnightFrozen] = useState<boolean>(true);
@@ -50,6 +56,8 @@ export function ProfileView({
   const [isUpdatingCurrency, setIsUpdatingCurrency] = useState<boolean>(false);
   const [isPinActive, setIsPinActive] = useState<boolean>(() => hasPinConfigured(currentUser.id));
   const [isPinModalOpen, setIsPinModalOpen] = useState<boolean>(false);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [showAdminDashboard, setShowAdminDashboard] = useState<boolean>(initialShowAdmin);
 
   useEffect(() => {
     setIsPinActive(hasPinConfigured(currentUser.id));
@@ -65,6 +73,8 @@ export function ProfileView({
         else if (cur === "₦" || cur.toUpperCase() === "NAIRA") setCurrency("NGN");
         else setCurrency(cur);
       }
+      const adminOk = await checkIsAdminAction();
+      setIsAdmin(adminOk);
     }
     loadPrefs();
   }, []);
@@ -97,6 +107,15 @@ export function ProfileView({
       : currentUser.user_metadata?.firstname ||
         currentUser.email?.split("@")[0] ||
         "Utilisateur";
+
+  if (showAdminDashboard) {
+    return (
+      <AdminDashboard
+        onBackToProfile={() => setShowAdminDashboard(false)}
+        onShowToast={onShowToast || (() => {})}
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col h-full justify-between space-y-6 pb-6 animate-fadeIn">
@@ -230,6 +249,36 @@ export function ProfileView({
               <span>{isPinActive ? "Actif (Modifier)" : "Activer"}</span>
             </button>
           </div>
+
+          {/* Espace Administrateur (Story AD1) */}
+          {isAdmin && (
+            <div className="p-4 flex items-center justify-between bg-primary/5 border-t border-line">
+              <div className="flex items-center gap-2.5 text-xs font-semibold text-foreground">
+                <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5 font-bold">
+                    <span>Espace Administrateur</span>
+                    <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-primary/20 text-primary">
+                      Admin
+                    </span>
+                  </div>
+                  <div className="text-[10.5px] text-muted font-medium">
+                    Supervision globale & modération
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAdminDashboard(true)}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-primary text-white text-xs font-bold hover:opacity-95 touch-target transition-opacity shadow-sm"
+              >
+                <span>Gérer</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

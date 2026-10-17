@@ -44,6 +44,7 @@ export default function HomePage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
   const [isPinUnlocked, setIsPinUnlocked] = useState<boolean>(false);
+  const [initialShowAdmin, setInitialShowAdmin] = useState<boolean>(false);
 
   useEffect(() => {
     // Initialisation du thème (clair / sombre)
@@ -108,9 +109,13 @@ export default function HomePage() {
         setView("authenticated");
         setIsPinUnlocked(urlParams.get("lockPin") !== "1");
 
-        const tabParam = urlParams.get("tab") as NavTab | "profile";
-        if (tabParam && ["dashboard", "budget", "bilan", "history", "profile"].includes(tabParam)) {
+        const tabParam = urlParams.get("tab") as NavTab | "profile" | "admin";
+        if (tabParam === "admin" || urlParams.get("admin") === "1") {
+          setActiveTab("profile");
+          setInitialShowAdmin(true);
+        } else if (tabParam && ["dashboard", "budget", "bilan", "history", "profile"].includes(tabParam)) {
           setActiveTab(tabParam);
+          setInitialShowAdmin(false);
         }
         const subParam = urlParams.get("subtab") as "planned" | "income";
         if (subParam && ["planned", "income"].includes(subParam)) {
@@ -473,6 +478,7 @@ export default function HomePage() {
                   onDeletedAccount={handleDeletedAccount}
                   onShowToast={(msg) => setToastMessage(msg)}
                   onCurrencyChange={() => setRefreshTrigger((t) => t + 1)}
+                  initialShowAdmin={initialShowAdmin}
                 />
               )}
 

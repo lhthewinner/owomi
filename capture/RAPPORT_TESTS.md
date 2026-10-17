@@ -1,6 +1,6 @@
 # Rapport de Test Visuel — Application Asoro
 
-*Généré le 17/10/2026 18:04:46*
+*Généré le 17/10/2026 18:30:49*
 
 Ce dossier regroupe les captures d'écran réelles issues des tests automatiques sur l'ensemble des écrans et fonctionnalités de l'application Asoro.
 
@@ -21,7 +21,8 @@ Ce dossier regroupe les captures d'écran réelles issues des tests automatiques
 | 13 | **Déverrouillage par code PIN** | Écran de sécurité tactile : saisie du PIN à 4 chiffres, protection anti-brute-force (3 essais max) et bouton de secours 'PIN oublié'. | [13_verrouillage_pin.png](./13_verrouillage_pin.png) |
 | 14 | **Bilan — Vue Semestre (6 mois)** | Analyse financière semestrielle avec graphique d'évolution sur 6 barres mensuelles, totaux cumulés et répartition par catégorie. | [14_bilan_semestre.png](./14_bilan_semestre.png) |
 | 15 | **Bilan — Vue Année (1 an)** | Analyse financière annuelle avec graphique d'évolution sur 12 barres mensuelles, ratio prévu/imprévu et économies réalisées sur l'année. | [15_bilan_annee.png](./15_bilan_annee.png) |
-| 16 | **Tableau de bord — Rendu PC / Écran d'ordinateur** | Interface web fluide et aérée s'adaptant élégamment sur grand écran sans cadre de téléphone artificiel. | [14_desktop_pc.png](./14_desktop_pc.png) |
+| 16 | **Espace Administrateur (Supervision & Modération)** | Tableau de bord administrateur sécurisé (Story AD1) : statistiques anonymes d'usage, recherche d'utilisateurs et actions de modération (activer, suspendre, bannir). | [16_espace_admin.png](./16_espace_admin.png) |
+| 17 | **Tableau de bord — Rendu PC / Écran d'ordinateur** | Interface web fluide et aérée s'adaptant élégamment sur grand écran sans cadre de téléphone artificiel. | [14_desktop_pc.png](./14_desktop_pc.png) |
 
 ---
 
@@ -102,7 +103,12 @@ Ce dossier regroupe les captures d'écran réelles issues des tests automatiques
 
 ![Bilan — Vue Année (1 an)](./15_bilan_annee.png)
 
-### 16. Tableau de bord — Rendu PC / Écran d'ordinateur
+### 16. Espace Administrateur (Supervision & Modération)
+> Tableau de bord administrateur sécurisé (Story AD1) : statistiques anonymes d'usage, recherche d'utilisateurs et actions de modération (activer, suspendre, bannir).
+
+![Espace Administrateur (Supervision & Modération)](./16_espace_admin.png)
+
+### 17. Tableau de bord — Rendu PC / Écran d'ordinateur
 > Interface web fluide et aérée s'adaptant élégamment sur grand écran sans cadre de téléphone artificiel.
 
 ![Tableau de bord — Rendu PC / Écran d'ordinateur](./14_desktop_pc.png)

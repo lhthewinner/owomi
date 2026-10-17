@@ -126,6 +126,25 @@ export async function signInAction(
     return { success: false, message: content.auth.errors.invalidCredentials };
   }
 
+  if (authData.user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("status")
+      .eq("id", authData.user.id)
+      .single();
+
+    if (profile?.status === "suspended" || profile?.status === "banned") {
+      await supabase.auth.signOut();
+      return {
+        success: false,
+        message:
+          profile.status === "banned"
+            ? "Ce compte a été définitivement banni."
+            : "Ce compte est actuellement suspendu. Veuillez contacter un administrateur.",
+      };
+    }
+  }
+
   return { success: true };
 }
 

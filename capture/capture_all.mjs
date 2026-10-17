@@ -93,6 +93,12 @@ const PAGES_TO_CAPTURE = [
     title: "Bilan — Vue Année (1 an)",
     description: "Analyse financière annuelle avec graphique d'évolution sur 12 barres mensuelles, ratio prévu/imprévu et économies réalisées sur l'année.",
   },
+  {
+    name: "16_espace_admin",
+    url: "http://localhost:3000/?demo=1&tab=admin",
+    title: "Espace Administrateur (Supervision & Modération)",
+    description: "Tableau de bord administrateur sécurisé (Story AD1) : statistiques anonymes d'usage, recherche d'utilisateurs et actions de modération (activer, suspendre, bannir).",
+  },
 ];
 
 async function main() {

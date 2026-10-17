@@ -19,6 +19,8 @@ export type SyncStatus = "pending" | "synced";
 export type PeriodType = "day" | "week" | "month";
 export type LoanDirection = "borrowed" | "given";
 export type ThemeType = "light" | "dark" | "system";
+export type UserRole = "user" | "admin";
+export type UserStatus = "active" | "suspended" | "banned";
 
 export type Database = {
   public: {
@@ -28,6 +30,9 @@ export type Database = {
           id: string;
           name: string;
           firstname: string;
+          email: string;
+          role: UserRole;
+          status: UserStatus;
           currency: string;
           timezone: string;
           theme: ThemeType;
@@ -39,6 +44,9 @@ export type Database = {
           id: string;
           name?: string;
           firstname?: string;
+          email?: string;
+          role?: UserRole;
+          status?: UserStatus;
           currency?: string;
           timezone?: string;
           theme?: ThemeType;
@@ -50,6 +58,9 @@ export type Database = {
           id?: string;
           name?: string;
           firstname?: string;
+          email?: string;
+          role?: UserRole;
+          status?: UserStatus;
           currency?: string;
           timezone?: string;
           theme?: ThemeType;
