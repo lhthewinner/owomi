@@ -14,6 +14,7 @@ import {
 } from "@/components/operations/QuickAddSheet";
 import { BudgetView } from "@/components/operations/BudgetView";
 import { BalanceView } from "@/components/balance/BalanceView";
+import type { PeriodType } from "@/lib/balance/calculator";
 import { HistoryView } from "@/components/history/HistoryView";
 import { ProfileView } from "@/components/profile/ProfileView";
 import { Toast } from "@/components/ui/Toast";
@@ -36,6 +37,7 @@ export default function HomePage() {
   // Navigation dans l'espace connecté
   const [activeTab, setActiveTab] = useState<NavTab | "profile">("dashboard");
   const [budgetSubTab, setBudgetSubTab] = useState<"planned" | "income">("planned");
+  const [balancePeriod, setBalancePeriod] = useState<PeriodType>("day");
   const [isAddOpen, setIsAddOpen] = useState<boolean>(false);
   const [addMode, setAddMode] = useState<OperationMode>("exp");
   const [payPlannedId, setPayPlannedId] = useState<string | null>(null);
@@ -113,6 +115,10 @@ export default function HomePage() {
         const subParam = urlParams.get("subtab") as "planned" | "income";
         if (subParam && ["planned", "income"].includes(subParam)) {
           setBudgetSubTab(subParam);
+        }
+        const periodParam = urlParams.get("period") as PeriodType;
+        if (periodParam && ["day", "week", "month", "semester", "year"].includes(periodParam)) {
+          setBalancePeriod(periodParam);
         }
         if (urlParams.get("openAdd") === "1") {
           setIsAddOpen(true);
@@ -474,6 +480,7 @@ export default function HomePage() {
                 <BalanceView
                   onShowToast={(msg) => setToastMessage(msg)}
                   refreshTrigger={refreshTrigger}
+                  initialPeriod={balancePeriod}
                 />
               )}
 

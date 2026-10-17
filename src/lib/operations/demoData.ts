@@ -169,11 +169,12 @@ export function getDemoIncomesAndLoans(todayStr: string): {
   };
 }
 
-import { calculateBalance } from "@/lib/balance/calculator";
+import { calculateBalance, type PeriodType } from "@/lib/balance/calculator";
 
 export function getDemoBalanceData(
-  period: "day" | "week" | "month",
-  targetDate: string
+  period: PeriodType,
+  targetDate: string,
+  currency: string = "FCFA"
 ): BalanceDataResponse {
   const result = calculateBalance({
     period,
@@ -241,7 +242,7 @@ export function getDemoBalanceData(
 
   return {
     ...result,
-    currency: "FCFA",
+    currency,
   };
 }
 

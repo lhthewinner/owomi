@@ -81,11 +81,23 @@ const PAGES_TO_CAPTURE = [
     title: "Déverrouillage par code PIN",
     description: "Écran de sécurité tactile : saisie du PIN à 4 chiffres, protection anti-brute-force (3 essais max) et bouton de secours 'PIN oublié'.",
   },
+  {
+    name: "14_bilan_semestre",
+    url: "http://localhost:3000/?demo=1&tab=bilan&period=semester",
+    title: "Bilan — Vue Semestre (6 mois)",
+    description: "Analyse financière semestrielle avec graphique d'évolution sur 6 barres mensuelles, totaux cumulés et répartition par catégorie.",
+  },
+  {
+    name: "15_bilan_annee",
+    url: "http://localhost:3000/?demo=1&tab=bilan&period=year",
+    title: "Bilan — Vue Année (1 an)",
+    description: "Analyse financière annuelle avec graphique d'évolution sur 12 barres mensuelles, ratio prévu/imprévu et économies réalisées sur l'année.",
+  },
 ];
 
 async function main() {
   const chromePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
-  const userDataDir = "C:\\Users\\lucie\\AppData\\Local\\Temp\\chrome-asoro-capture";
+  const userDataDir = path.join(process.env.TEMP || "C:\\temp", `asoro-capture-${Date.now()}`);
 
   console.log("=== Lancement de la suite de capture Asoro ===");
   const chrome = spawn(chromePath, [

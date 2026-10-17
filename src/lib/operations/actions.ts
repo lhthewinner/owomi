@@ -17,6 +17,8 @@ import {
   getTodayDateString,
   getCurrentWeekRange,
   getCurrentMonthRange,
+  getCurrentSemesterRange,
+  getCurrentYearRange,
   shiftDate,
 } from "@/lib/utils/date";
 import {
@@ -477,7 +479,14 @@ export async function getDashboardDataAction(): Promise<OperationResult<Dashboar
 
   if (!user) {
     if (await isDemoSession()) {
-      return { success: true, data: getDemoDashboardData(getTodayDateString("Africa/Porto-Novo")) };
+      const today = getTodayDateString("Africa/Porto-Novo");
+      const demoData = getDemoDashboardData(today);
+      try {
+        const cookieStore = await cookies();
+        const demoCurrency = cookieStore.get("asoro_demo_currency")?.value;
+        if (demoCurrency) demoData.currency = demoCurrency;
+      } catch {}
+      return { success: true, data: demoData };
     }
     return { success: false, message: content.auth.errors.invalidCredentials };
   }
@@ -823,8 +832,13 @@ export async function getBalanceDataAction(
 
   if (!user) {
     if (await isDemoSession()) {
+      let demoCurrency = "FCFA";
+      try {
+        const cookieStore = await cookies();
+        demoCurrency = cookieStore.get("asoro_demo_currency")?.value || "FCFA";
+      } catch {}
       const today = referenceDate || getTodayDateString("Africa/Porto-Novo");
-      return { success: true, data: getDemoBalanceData(period, today) };
+      return { success: true, data: getDemoBalanceData(period, today, demoCurrency) };
     }
     return { success: false, message: content.auth.errors.invalidCredentials };
   }
@@ -853,10 +867,18 @@ export async function getBalanceDataAction(
     const wk = getCurrentWeekRange(targetDate);
     queryStart = wk.start;
     queryEnd = wk.end;
-  } else {
+  } else if (period === "month") {
     const mo = getCurrentMonthRange(targetDate);
     queryStart = mo.start;
     queryEnd = mo.end;
+  } else if (period === "semester") {
+    const sem = getCurrentSemesterRange(targetDate);
+    queryStart = sem.start;
+    queryEnd = sem.end;
+  } else {
+    const yr = getCurrentYearRange(targetDate);
+    queryStart = yr.start;
+    queryEnd = yr.end;
   }
 
   const [expRes, incRes, loanRes] = await Promise.all([
@@ -917,6 +939,17 @@ export async function updateCurrencyAction(currency: string): Promise<OperationR
   } = await supabase.auth.getUser();
 
   if (!user) {
+    if (await isDemoSession()) {
+      try {
+        const cookieStore = await cookies();
+        cookieStore.set("asoro_demo_currency", cleanCurrency, {
+          path: "/",
+          httpOnly: true,
+          sameSite: "lax",
+        });
+      } catch {}
+      return { success: true };
+    }
     return { success: false, message: content.auth.errors.invalidCredentials };
   }
 
@@ -950,10 +983,15 @@ export async function getProfilePreferencesAction(): Promise<
 
   if (!user) {
     if (await isDemoSession()) {
+      let demoCurrency = "FCFA";
+      try {
+        const cookieStore = await cookies();
+        demoCurrency = cookieStore.get("asoro_demo_currency")?.value || "FCFA";
+      } catch {}
       return {
         success: true,
         data: {
-          currency: "FCFA",
+          currency: demoCurrency,
           timezone: "Africa/Porto-Novo",
           theme: "light",
           monthlySalary: 250000,
@@ -998,9 +1036,16 @@ export async function getHistoryOperationsAction(
 
   if (!user) {
     if (await isDemoSession()) {
+      let demoCurrency = "FCFA";
+      try {
+        const cookieStore = await cookies();
+        demoCurrency = cookieStore.get("asoro_demo_currency")?.value || "FCFA";
+      } catch {}
+      const demoData = getDemoHistoryOperations(filter, getTodayDateString("Africa/Porto-Novo"));
+      demoData.currency = demoCurrency;
       return {
         success: true,
-        data: getDemoHistoryOperations(filter, getTodayDateString("Africa/Porto-Novo")),
+        data: demoData,
       };
     }
     return { success: false, message: content.auth.errors.invalidCredentials };

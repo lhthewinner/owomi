@@ -17,6 +17,7 @@ import {
   getProfilePreferencesAction,
   updateCurrencyAction,
 } from "@/lib/operations/actions";
+import { SUPPORTED_CURRENCIES } from "@/lib/utils/currency";
 import { DeleteAccountModal } from "./DeleteAccountModal";
 import { PinSettingsModal } from "./PinSettingsModal";
 import { hasPinConfigured } from "@/lib/auth/pin";
@@ -58,7 +59,10 @@ export function ProfileView({
     async function loadPrefs() {
       const res = await getProfilePreferencesAction();
       if (res.success && res.data) {
-        setCurrency(res.data.currency);
+        const cur = res.data.currency;
+        if (cur === "€") setCurrency("EUR");
+        else if (cur === "$") setCurrency("USD");
+        else setCurrency(cur);
       }
     }
     loadPrefs();
@@ -137,11 +141,13 @@ export function ProfileView({
               onChange={(e) => handleCurrencySelect(e.target.value)}
               disabled={isUpdatingCurrency}
               aria-label="Choisir la devise"
-              className="bg-card2 border border-line text-foreground text-xs font-bold py-1.5 px-2.5 rounded-xl outline-none focus:border-primary transition-colors cursor-pointer"
+              className="bg-card2 border border-line text-foreground text-xs font-bold py-1.5 px-2.5 rounded-xl outline-none focus:border-primary transition-colors cursor-pointer max-w-[170px]"
             >
-              <option value="FCFA">FCFA (XOF)</option>
-              <option value="€">Euro (€)</option>
-              <option value="$">Dollar ($)</option>
+              {SUPPORTED_CURRENCIES.map((cur) => (
+                <option key={cur.code} value={cur.code}>
+                  {cur.label}
+                </option>
+              ))}
             </select>
           </div>
 

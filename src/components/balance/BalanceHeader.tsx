@@ -67,11 +67,11 @@ export function BalanceHeader({
         </div>
       </div>
 
-      {/* 2. Sélecteur de période (Jour / Semaine / Mois) */}
+      {/* 2. Sélecteur de période (Jour / Semaine / Mois / 6 mois / 1 an) */}
       <div className="flex bg-card2 p-1 rounded-2xl border border-line/60">
         <button
           onClick={() => onPeriodChange("day")}
-          className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all touch-target ${
+          className={`flex-1 py-2 px-1 text-[11px] sm:text-xs font-bold rounded-xl transition-all touch-target text-center truncate ${
             period === "day"
               ? "bg-card text-foreground shadow-sm"
               : "text-muted hover:text-foreground"
@@ -81,7 +81,7 @@ export function BalanceHeader({
         </button>
         <button
           onClick={() => onPeriodChange("week")}
-          className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all touch-target ${
+          className={`flex-1 py-2 px-1 text-[11px] sm:text-xs font-bold rounded-xl transition-all touch-target text-center truncate ${
             period === "week"
               ? "bg-card text-foreground shadow-sm"
               : "text-muted hover:text-foreground"
@@ -91,13 +91,33 @@ export function BalanceHeader({
         </button>
         <button
           onClick={() => onPeriodChange("month")}
-          className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all touch-target ${
+          className={`flex-1 py-2 px-1 text-[11px] sm:text-xs font-bold rounded-xl transition-all touch-target text-center truncate ${
             period === "month"
               ? "bg-card text-foreground shadow-sm"
               : "text-muted hover:text-foreground"
           }`}
         >
           {content.balance.monthTab}
+        </button>
+        <button
+          onClick={() => onPeriodChange("semester")}
+          className={`flex-1 py-2 px-1 text-[11px] sm:text-xs font-bold rounded-xl transition-all touch-target text-center truncate ${
+            period === "semester"
+              ? "bg-card text-foreground shadow-sm"
+              : "text-muted hover:text-foreground"
+          }`}
+        >
+          {content.balance.semesterTab}
+        </button>
+        <button
+          onClick={() => onPeriodChange("year")}
+          className={`flex-1 py-2 px-1 text-[11px] sm:text-xs font-bold rounded-xl transition-all touch-target text-center truncate ${
+            period === "year"
+              ? "bg-card text-foreground shadow-sm"
+              : "text-muted hover:text-foreground"
+          }`}
+        >
+          {content.balance.yearTab}
         </button>
       </div>
     </div>

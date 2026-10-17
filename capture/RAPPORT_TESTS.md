@@ -1,6 +1,6 @@
 # Rapport de Test Visuel — Application Asoro
 
-*Généré le 17/10/2026 15:21:13*
+*Généré le 17/10/2026 16:27:03*
 
 Ce dossier regroupe les captures d'écran réelles issues des tests automatiques sur l'ensemble des écrans et fonctionnalités de l'application Asoro.
 
@@ -19,7 +19,9 @@ Ce dossier regroupe les captures d'écran réelles issues des tests automatiques
 | 11 | **Profil & Paramètres** | Choix de la devise (FCFA, EUR, USD), bascule de thème clair/sombre, option 'Solde figé à minuit', déconnexion et suppression sécurisée. | [11_profil.png](./11_profil.png) |
 | 12 | **Tableau de bord — Thème sombre** | Rendu optimal et contrasté du thème sombre conforme à la maquette et aux critères WCAG AA. | [12_mode_sombre.png](./12_mode_sombre.png) |
 | 13 | **Déverrouillage par code PIN** | Écran de sécurité tactile : saisie du PIN à 4 chiffres, protection anti-brute-force (3 essais max) et bouton de secours 'PIN oublié'. | [13_verrouillage_pin.png](./13_verrouillage_pin.png) |
-| 14 | **Tableau de bord — Rendu PC / Écran d'ordinateur** | Interface web fluide et aérée s'adaptant élégamment sur grand écran sans cadre de téléphone artificiel. | [14_desktop_pc.png](./14_desktop_pc.png) |
+| 14 | **Bilan — Vue Semestre (6 mois)** | Analyse financière semestrielle avec graphique d'évolution sur 6 barres mensuelles, totaux cumulés et répartition par catégorie. | [14_bilan_semestre.png](./14_bilan_semestre.png) |
+| 15 | **Bilan — Vue Année (1 an)** | Analyse financière annuelle avec graphique d'évolution sur 12 barres mensuelles, ratio prévu/imprévu et économies réalisées sur l'année. | [15_bilan_annee.png](./15_bilan_annee.png) |
+| 16 | **Tableau de bord — Rendu PC / Écran d'ordinateur** | Interface web fluide et aérée s'adaptant élégamment sur grand écran sans cadre de téléphone artificiel. | [14_desktop_pc.png](./14_desktop_pc.png) |
 
 ---
 
@@ -90,7 +92,17 @@ Ce dossier regroupe les captures d'écran réelles issues des tests automatiques
 
 ![Déverrouillage par code PIN](./13_verrouillage_pin.png)
 
-### 14. Tableau de bord — Rendu PC / Écran d'ordinateur
+### 14. Bilan — Vue Semestre (6 mois)
+> Analyse financière semestrielle avec graphique d'évolution sur 6 barres mensuelles, totaux cumulés et répartition par catégorie.
+
+![Bilan — Vue Semestre (6 mois)](./14_bilan_semestre.png)
+
+### 15. Bilan — Vue Année (1 an)
+> Analyse financière annuelle avec graphique d'évolution sur 12 barres mensuelles, ratio prévu/imprévu et économies réalisées sur l'année.
+
+![Bilan — Vue Année (1 an)](./15_bilan_annee.png)
+
+### 16. Tableau de bord — Rendu PC / Écran d'ordinateur
 > Interface web fluide et aérée s'adaptant élégamment sur grand écran sans cadre de téléphone artificiel.
 
 ![Tableau de bord — Rendu PC / Écran d'ordinateur](./14_desktop_pc.png)
