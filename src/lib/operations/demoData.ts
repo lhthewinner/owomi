@@ -115,7 +115,7 @@ export function getDemoPlannedExpenses(
   ];
 
   const items = rawItems.map((p) => {
-    const { status, left, progressPercent } = calculatePlannedExpenseProgress(
+    const { status, left, progressPercent, overrun } = calculatePlannedExpenseProgress(
       p.amount,
       p.spent
     );
@@ -124,6 +124,7 @@ export function getDemoPlannedExpenses(
       left,
       status,
       progressPercent,
+      overrun,
     };
   });
 
@@ -256,6 +257,11 @@ export function getDemoBalanceData(
         counterpart: "Maman",
         date: targetDate,
       },
+    ],
+    plannedExpenses: [
+      { id: "pe-1", amount: 80000 },
+      { id: "pe-2", amount: 60000 },
+      { id: "pe-3", amount: 15000 },
     ],
   });
 

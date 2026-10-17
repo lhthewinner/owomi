@@ -354,6 +354,18 @@ export function PlannedExpensesView({
                   </div>
                 </div>
 
+                {/* Information bienveillante de basculement du surplus en imprévu */}
+                {isExceeded && p.spent > p.amount && (
+                  <div className="text-[11px] font-semibold text-warn bg-warn/10 rounded-xl px-2.5 py-1.5 flex items-center gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                    <span>
+                      Surplus de{" "}
+                      <strong>{formatAmount(p.overrun ?? p.spent - p.amount, currency)}</strong>{" "}
+                      comptabilisé en imprévu dans le bilan
+                    </span>
+                  </div>
+                )}
+
                 {/* Actions : Régler, Ajuster, Modifier, Supprimer */}
                 <div className="flex items-center justify-between pt-1 border-t border-line/60">
                   {!isSettled ? (

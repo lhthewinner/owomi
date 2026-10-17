@@ -59,6 +59,7 @@ describe("Dépenses prévues récurrentes et reconduction (Story D5)", () => {
     expect(res.status).toBe("depasse");
     expect(res.left).toBe(0);
     expect(res.progressPercent).toBe(100);
+    expect(res.overrun).toBe(10000);
   });
 
   it("fournit les données récurrentes dans les données de test (mode démo)", () => {

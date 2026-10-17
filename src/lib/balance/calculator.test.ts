@@ -227,6 +227,43 @@ describe("Module unique de calcul du bilan (calculator.ts)", () => {
     expect(p4.status).toBe("depasse");
     expect(p4.left).toBe(0);
     expect(p4.progressPercent).toBe(100);
+    expect(p4.overrun).toBe(2000);
+  });
+
+  // 5b. Règle financière Asoro : reclassement automatique du surplus d'une dépense prévue dans l'imprévu
+  it("bascule automatiquement le surplus d'une dépense prévue dépassée dans les dépenses imprévues", () => {
+    // Cas utilisateur : Prévu 10 000 F pour le transport
+    // Règlements successifs : 1 000, 4 000, 3 000, 4 000 (total 12 000 F)
+    const expenses: ExpenseItem[] = [
+      { id: "e1", amount: 1000, category: "Transport", date: "2026-10-05", planned_expense_id: "pe-transport" },
+      { id: "e2", amount: 4000, category: "Transport", date: "2026-10-10", planned_expense_id: "pe-transport" },
+      { id: "e3", amount: 3000, category: "Transport", date: "2026-10-15", planned_expense_id: "pe-transport" },
+      { id: "e4", amount: 4000, category: "Transport", date: "2026-10-17", planned_expense_id: "pe-transport" },
+    ];
+
+    const res = calculateBalance({
+      period: "month",
+      referenceDate: "2026-10-17",
+      salary: 100000,
+      expenses,
+      incomes: [],
+      loans: [],
+      plannedExpenses: [
+        { id: "pe-transport", amount: 10000 },
+      ],
+    });
+
+    // 1. Le total dépensé reste rigoureusement 12 000 F
+    expect(res.totalSpent).toBe(12000);
+    // 2. La part prévue est plafonnée à l'enveloppe de 10 000 F
+    expect(res.plannedSpent).toBe(10000);
+    // 3. Le surplus de 2 000 F est basculé dans l'imprévu
+    expect(res.unplannedSpent).toBe(2000);
+    // 4. Pourcentages exacts : 83% prévu, 17% imprévu
+    expect(res.plannedPercent).toBe(83);
+    expect(res.unplannedPercent).toBe(17);
+    // 5. Solde disponible : 100 000 - 12 000 = 88 000 F
+    expect(res.balance).toBe(88000);
   });
 
   // 6. Cas limite : Suppression d'une dépense prévue ayant des règlements

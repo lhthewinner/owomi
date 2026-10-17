@@ -10,6 +10,7 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Delete,
+  AlertTriangle,
 } from "lucide-react";
 import { formatAmount } from "@/lib/utils/currency";
 import { DEFAULT_CATEGORIES } from "@/lib/constants/categories";
@@ -202,9 +203,16 @@ export function QuickAddSheet({
           return;
         }
 
+        const targetPlanned = selectedPlannedId
+          ? plannedList.find((p) => p.id === selectedPlannedId)
+          : null;
+        const hadSurplus = targetPlanned && (targetPlanned.left === 0 || amount > targetPlanned.left);
+
         onSuccess(
           selectedPlannedId
-            ? "Règlement enregistré sur la dépense prévue"
+            ? hadSurplus
+              ? "Règlement enregistré (le surplus est compté en imprévu dans le bilan)"
+              : "Règlement enregistré sur la dépense prévue"
             : "Dépense enregistrée (imprévue)"
         );
       } else if (mode === "inc") {
@@ -424,8 +432,8 @@ export function QuickAddSheet({
                 })}
               </div>
 
-              {/* Sélection Dépense Prévue (Story D2) */}
-              <div>
+              {/* Sélection Dépense Prévue (Story D2 & Règle Surplus) */}
+              <div className="space-y-1.5">
                 <select
                   aria-label="Rattacher à une dépense prévue"
                   value={selectedPlannedId || ""}
@@ -446,6 +454,25 @@ export function QuickAddSheet({
                     </option>
                   ))}
                 </select>
+
+                {selectedPlannedId && (() => {
+                  const found = plannedList.find((p) => p.id === selectedPlannedId);
+                  if (!found) return null;
+                  const enteredAmount = parseInt(amountStr, 10) || 0;
+                  const isOver = found.left === 0 || enteredAmount > found.left;
+                  if (!isOver) return null;
+
+                  return (
+                    <div className="text-[11px] text-warn bg-warn/10 rounded-xl px-2.5 py-1.5 font-medium flex items-center gap-1.5 animate-fadeIn">
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                      <span>
+                        {found.left === 0
+                          ? `Cette enveloppe (${found.name}) est déjà épuisée : ce montant sera comptabilisé en imprévu dans le bilan.`
+                          : `Le surplus au-delà de ${formatAmount(found.left, currency)} sera automatiquement comptabilisé en imprévu dans le bilan.`}
+                      </span>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           )}

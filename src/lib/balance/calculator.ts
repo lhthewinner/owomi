@@ -59,6 +59,11 @@ export interface EvolutionPoint {
   gainedHeightPercent: number; // 0 à 100
 }
 
+export interface PlannedExpenseBudget {
+  id: string;
+  amount: number;
+}
+
 export interface BalanceCalculationInput {
   period: PeriodType;
   referenceDate: string; // YYYY-MM-DD
@@ -66,6 +71,7 @@ export interface BalanceCalculationInput {
   expenses: ExpenseItem[];
   incomes: IncomeItem[];
   loans: LoanItem[];
+  plannedExpenses?: PlannedExpenseBudget[];
 }
 
 export interface BalanceResult {
@@ -116,7 +122,15 @@ const MONTH_SHORT_NAMES = [
  * Calcul complet du bilan pour une période donnée (jour, semaine, mois).
  */
 export function calculateBalance(input: BalanceCalculationInput): BalanceResult {
-  const { period, referenceDate, salary, expenses, incomes, loans } = input;
+  const {
+    period,
+    referenceDate,
+    salary,
+    expenses,
+    incomes,
+    loans,
+    plannedExpenses,
+  } = input;
 
   const range = getDateRange(period, referenceDate);
   const formattedLabel = formatDateRangeFrench(period, range.start, range.end);
@@ -132,14 +146,50 @@ export function calculateBalance(input: BalanceCalculationInput): BalanceResult 
     (l) => l.date >= range.start && l.date <= range.end
   );
 
-  // Totaux des dépenses
-  const plannedSpent = periodExpenses
-    .filter((e) => Boolean(e.planned_expense_id))
-    .reduce((sum, e) => sum + e.amount, 0);
+  // Totaux des dépenses : Prévu vs Imprévu
+  // Règle financière Asoro : la part d'une dépense prévue est plafonnée à son enveloppe.
+  // Tout surplus (dépassement) est automatiquement reclassé en dépense imprévue.
+  let plannedSpent = 0;
+  let unplannedSpent = 0;
 
-  const unplannedSpent = periodExpenses
-    .filter((e) => !e.planned_expense_id)
-    .reduce((sum, e) => sum + e.amount, 0);
+  if (plannedExpenses && plannedExpenses.length > 0) {
+    const plannedBudgetMap = new Map<string, number>();
+    for (const p of plannedExpenses) {
+      plannedBudgetMap.set(p.id, p.amount);
+    }
+
+    const spentByPlanned = new Map<string, number>();
+    for (const e of periodExpenses) {
+      if (e.planned_expense_id) {
+        const current = spentByPlanned.get(e.planned_expense_id) || 0;
+        spentByPlanned.set(e.planned_expense_id, current + e.amount);
+      } else {
+        unplannedSpent += e.amount;
+      }
+    }
+
+    for (const [peId, totalSpentOnPe] of spentByPlanned.entries()) {
+      const budget = plannedBudgetMap.get(peId);
+      if (budget !== undefined) {
+        const withinBudget = Math.min(totalSpentOnPe, budget);
+        const overflow = Math.max(0, totalSpentOnPe - budget);
+        plannedSpent += withinBudget;
+        unplannedSpent += overflow;
+      } else {
+        // Dépense rattachée à une prévue inconnue : 100% imprévue
+        unplannedSpent += totalSpentOnPe;
+      }
+    }
+  } else {
+    // Rétrocompatibilité si plannedExpenses n'est pas fourni
+    plannedSpent = periodExpenses
+      .filter((e) => Boolean(e.planned_expense_id))
+      .reduce((sum, e) => sum + e.amount, 0);
+
+    unplannedSpent = periodExpenses
+      .filter((e) => !e.planned_expense_id)
+      .reduce((sum, e) => sum + e.amount, 0);
+  }
 
   const totalSpent = plannedSpent + unplannedSpent;
 
@@ -407,6 +457,7 @@ export function calculatePlannedExpenseProgress(
   status: "venir" | "cours" | "solde" | "depasse";
   left: number;
   progressPercent: number;
+  overrun: number;
 } {
   let status: "venir" | "cours" | "solde" | "depasse" = "venir";
   if (spent === 0) {
@@ -420,12 +471,13 @@ export function calculatePlannedExpenseProgress(
   }
 
   const left = Math.max(0, plannedAmount - spent);
+  const overrun = Math.max(0, spent - plannedAmount);
   const progressPercent =
     plannedAmount > 0
       ? Math.min(100, Math.round((spent / plannedAmount) * 100))
       : 0;
 
-  return { status, left, progressPercent };
+  return { status, left, progressPercent, overrun };
 }
 
 export interface GenericOperation {

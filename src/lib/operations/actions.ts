@@ -508,7 +508,7 @@ export async function getDashboardDataAction(): Promise<OperationResult<Dashboar
   const monthRange = getCurrentMonthRange(todayStr);
 
   // Opérations du mois pour les totaux
-  const [expRes, incRes, loanRes] = await Promise.all([
+  const [expRes, incRes, loanRes, planRes] = await Promise.all([
     supabase
       .from("expenses")
       .select("*")
@@ -527,11 +527,19 @@ export async function getDashboardDataAction(): Promise<OperationResult<Dashboar
       .eq("user_id", user.id)
       .gte("date", monthRange.start)
       .lte("date", monthRange.end),
+    supabase
+      .from("planned_expenses")
+      .select("id, amount")
+      .eq("user_id", user.id),
   ]);
 
   const expenses = expRes.data || [];
   const incomes = incRes.data || [];
   const loans = loanRes.data || [];
+  const plannedExpenses = (planRes.data || []).map((p) => ({
+    id: p.id,
+    amount: p.amount,
+  }));
 
   // 1. Reste du mois et totaux calculés via le module unique de bilan
   const monthCalc = calculateBalance({
@@ -541,6 +549,7 @@ export async function getDashboardDataAction(): Promise<OperationResult<Dashboar
     expenses,
     incomes,
     loans,
+    plannedExpenses,
   });
   const todayCalc = calculateBalance({
     period: "day",
@@ -549,6 +558,7 @@ export async function getDashboardDataAction(): Promise<OperationResult<Dashboar
     expenses,
     incomes,
     loans,
+    plannedExpenses,
   });
   const weekCalc = calculateBalance({
     period: "week",
@@ -557,6 +567,7 @@ export async function getDashboardDataAction(): Promise<OperationResult<Dashboar
     expenses,
     incomes,
     loans,
+    plannedExpenses,
   });
 
   const restOfMonth = monthCalc.balance;
@@ -599,6 +610,7 @@ export interface PlannedExpenseWithProgress {
   left: number;
   status: PlannedExpenseStatus;
   progressPercent: number;
+  overrun?: number;
 }
 
 export interface PlannedExpensesSummary {
@@ -850,7 +862,7 @@ export async function getPlannedExpensesWithProgressAction(): Promise<
       .filter((e) => e.planned_expense_id === p.id)
       .reduce((sum, e) => sum + e.amount, 0);
 
-    const { status, left, progressPercent } = calculatePlannedExpenseProgress(
+    const { status, left, progressPercent, overrun } = calculatePlannedExpenseProgress(
       p.amount,
       spent
     );
@@ -867,6 +879,7 @@ export async function getPlannedExpensesWithProgressAction(): Promise<
       left,
       status,
       progressPercent,
+      overrun,
     };
   });
 
@@ -976,7 +989,7 @@ export async function getBalanceDataAction(
     queryEnd = yr.end;
   }
 
-  const [expRes, incRes, loanRes] = await Promise.all([
+  const [expRes, incRes, loanRes, planRes] = await Promise.all([
     supabase
       .from("expenses")
       .select("id, amount, category, date, note, planned_expense_id")
@@ -995,11 +1008,19 @@ export async function getBalanceDataAction(
       .eq("user_id", user.id)
       .gte("date", queryStart)
       .lte("date", queryEnd),
+    supabase
+      .from("planned_expenses")
+      .select("id, amount")
+      .eq("user_id", user.id),
   ]);
 
   const expenses = (expRes.data || []) as ExpenseItem[];
   const incomes = (incRes.data || []) as IncomeItem[];
   const loans = (loanRes.data || []) as LoanItem[];
+  const plannedExpenses = (planRes.data || []).map((p) => ({
+    id: p.id,
+    amount: p.amount,
+  }));
 
   const balanceResult = calculateBalance({
     period,
@@ -1008,6 +1029,7 @@ export async function getBalanceDataAction(
     expenses,
     incomes,
     loans,
+    plannedExpenses,
   });
 
   return {
