@@ -21,6 +21,8 @@ import { SyncStatusBanner } from "@/components/offline/SyncStatusBanner";
 import { clearAllLocalData } from "@/lib/offline/sync";
 import { createClient } from "@/lib/supabase/client";
 import { signOutAction } from "@/lib/auth/actions";
+import { PinUnlockScreen } from "@/components/auth/PinUnlockScreen";
+import { hasPinConfigured, removePin, clearAllLocalPins } from "@/lib/auth/pin";
 import type { User } from "@supabase/supabase-js";
 
 type ActiveView = "welcome" | "auth" | "forgot" | "authenticated";
@@ -39,6 +41,7 @@ export default function HomePage() {
   const [payPlannedId, setPayPlannedId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
+  const [isPinUnlocked, setIsPinUnlocked] = useState<boolean>(false);
 
   useEffect(() => {
     // Initialisation du thème (clair / sombre)
@@ -70,6 +73,18 @@ export default function HomePage() {
       setCurrentUser(null);
       setView("welcome");
       return;
+    } else if (viewParam === "pin") {
+      setCurrentUser({
+        id: "demo-user-id",
+        email: "alex@asoro.app",
+        user_metadata: { name: "Alex" },
+        app_metadata: {},
+        aud: "authenticated",
+        created_at: new Date().toISOString(),
+      } as User);
+      setView("authenticated");
+      setIsPinUnlocked(false);
+      return;
     }
 
     const isDemo =
@@ -87,6 +102,7 @@ export default function HomePage() {
         created_at: new Date().toISOString(),
       } as User);
       setView("authenticated");
+      setIsPinUnlocked(urlParams.get("lockPin") !== "1");
 
       const tabParam = urlParams.get("tab") as NavTab | "profile";
       if (tabParam && ["dashboard", "budget", "bilan", "history", "profile"].includes(tabParam)) {
@@ -112,6 +128,9 @@ export default function HomePage() {
       if (session?.user) {
         setCurrentUser(session.user);
         setView("authenticated");
+        if (!hasPinConfigured(session.user.id)) {
+          setIsPinUnlocked(true);
+        }
       }
     });
 
@@ -121,8 +140,12 @@ export default function HomePage() {
       if (session?.user) {
         setCurrentUser(session.user);
         setView("authenticated");
+        if (_event === "SIGNED_IN") {
+          setIsPinUnlocked(true);
+        }
       } else if (_event === "SIGNED_OUT") {
         setCurrentUser(null);
+        setIsPinUnlocked(false);
       }
     });
 
@@ -178,6 +201,8 @@ export default function HomePage() {
   };
 
   const handleLogout = async () => {
+    clearAllLocalPins();
+    setIsPinUnlocked(false);
     await clearAllLocalData();
     await signOutAction();
     setCurrentUser(null);
@@ -187,6 +212,8 @@ export default function HomePage() {
   };
 
   const handleDeletedAccount = async () => {
+    clearAllLocalPins();
+    setIsPinUnlocked(false);
     await clearAllLocalData();
     setCurrentUser(null);
     setView("welcome");
@@ -327,15 +354,34 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* 4. ÉCRAN CONNECTÉ AVEC ONGLETS */}
+        {/* 4. ÉCRAN CONNECTÉ AVEC ONGLETS (OU DÉVERROUILLAGE PIN) */}
         {view === "authenticated" && currentUser && (
-          <div className="flex flex-col h-full justify-between">
-            {/* Bandeau d'état de synchronisation hors ligne (Story O2 & règle 7) */}
-            <SyncStatusBanner
+          (hasPinConfigured(currentUser.id) ||
+            (typeof window !== "undefined" &&
+              new URLSearchParams(window.location.search).get("view") === "pin")) &&
+          !isPinUnlocked ? (
+            <PinUnlockScreen
               userId={currentUser.id}
-              onSyncComplete={() => setRefreshTrigger((t) => t + 1)}
-              refreshTrigger={refreshTrigger}
+              userName={
+                currentUser.user_metadata?.firstname ||
+                currentUser.user_metadata?.name ||
+                "vous"
+              }
+              onUnlocked={() => setIsPinUnlocked(true)}
+              onForgotPin={() => {
+                removePin(currentUser.id);
+                setIsPinUnlocked(false);
+                handleLogout();
+              }}
             />
+          ) : (
+            <div className="flex flex-col h-full justify-between">
+              {/* Bandeau d'état de synchronisation hors ligne (Story O2 & règle 7) */}
+              <SyncStatusBanner
+                userId={currentUser.id}
+                onSyncComplete={() => setRefreshTrigger((t) => t + 1)}
+                refreshTrigger={refreshTrigger}
+              />
 
             {/* Contenu de l'onglet actif */}
             <div className="p-5 sm:p-6 flex-1">
@@ -432,7 +478,8 @@ export default function HomePage() {
               />
             )}
           </div>
-        )}
+        )
+      )}
 
         {/* 5. Feuille d'ajout rapide (QuickAddSheet) */}
         <QuickAddSheet

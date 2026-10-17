@@ -1,6 +1,6 @@
 # Rapport de Test Visuel — Application Asoro
 
-*Généré le 17/10/2026 13:46:27*
+*Généré le 17/10/2026 14:31:57*
 
 Ce dossier regroupe les captures d'écran réelles issues des tests automatiques sur l'ensemble des écrans et fonctionnalités de l'application Asoro.
 
@@ -18,6 +18,7 @@ Ce dossier regroupe les captures d'écran réelles issues des tests automatiques
 | 10 | **Historique des opérations** | Journal chronologique groupé par jour, totaux quotidiens, filtres (Tout, Dépenses, Revenus, Prêts) et suppression avec confirmation. | [10_historique.png](./10_historique.png) |
 | 11 | **Profil & Paramètres** | Choix de la devise (FCFA, EUR, USD), bascule de thème clair/sombre, option 'Solde figé à minuit', déconnexion et suppression sécurisée. | [11_profil.png](./11_profil.png) |
 | 12 | **Tableau de bord — Thème sombre** | Rendu optimal et contrasté du thème sombre conforme à la maquette et aux critères WCAG AA. | [12_mode_sombre.png](./12_mode_sombre.png) |
+| 13 | **Déverrouillage par code PIN** | Écran de sécurité tactile : saisie du PIN à 4 chiffres, protection anti-brute-force (3 essais max) et bouton de secours 'PIN oublié'. | [13_verrouillage_pin.png](./13_verrouillage_pin.png) |
 
 ---
 
@@ -82,4 +83,9 @@ Ce dossier regroupe les captures d'écran réelles issues des tests automatiques
 > Rendu optimal et contrasté du thème sombre conforme à la maquette et aux critères WCAG AA.
 
 ![Tableau de bord — Thème sombre](./12_mode_sombre.png)
+
+### 13. Déverrouillage par code PIN
+> Écran de sécurité tactile : saisie du PIN à 4 chiffres, protection anti-brute-force (3 essais max) et bouton de secours 'PIN oublié'.
+
+![Déverrouillage par code PIN](./13_verrouillage_pin.png)
 

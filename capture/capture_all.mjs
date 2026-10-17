@@ -75,6 +75,12 @@ const PAGES_TO_CAPTURE = [
     title: "Tableau de bord — Thème sombre",
     description: "Rendu optimal et contrasté du thème sombre conforme à la maquette et aux critères WCAG AA.",
   },
+  {
+    name: "13_verrouillage_pin",
+    url: "http://localhost:3000/?view=pin",
+    title: "Déverrouillage par code PIN",
+    description: "Écran de sécurité tactile : saisie du PIN à 4 chiffres, protection anti-brute-force (3 essais max) et bouton de secours 'PIN oublié'.",
+  },
 ];
 
 async function main() {

@@ -10,6 +10,7 @@ import {
   Clock,
   Globe,
   Coins,
+  KeyRound,
 } from "lucide-react";
 import { content } from "@/content/fr";
 import {
@@ -17,6 +18,8 @@ import {
   updateCurrencyAction,
 } from "@/lib/operations/actions";
 import { DeleteAccountModal } from "./DeleteAccountModal";
+import { PinSettingsModal } from "./PinSettingsModal";
+import { hasPinConfigured } from "@/lib/auth/pin";
 import type { User } from "@supabase/supabase-js";
 
 interface ProfileViewProps {
@@ -44,6 +47,12 @@ export function ProfileView({
   const [isMidnightFrozen, setIsMidnightFrozen] = useState<boolean>(true);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
   const [isUpdatingCurrency, setIsUpdatingCurrency] = useState<boolean>(false);
+  const [isPinActive, setIsPinActive] = useState<boolean>(() => hasPinConfigured(currentUser.id));
+  const [isPinModalOpen, setIsPinModalOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    setIsPinActive(hasPinConfigured(currentUser.id));
+  }, [currentUser.id]);
 
   useEffect(() => {
     async function loadPrefs() {
@@ -194,6 +203,26 @@ export function ProfileView({
               />
             </button>
           </div>
+
+          {/* Verrouillage par Code PIN */}
+          <div className="p-4 flex items-center justify-between">
+            <div className="flex items-center gap-2.5 text-xs font-semibold text-foreground">
+              <KeyRound className="w-4 h-4 text-primary" />
+              <span>Code PIN de sécurité</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsPinModalOpen(true)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-card2 border border-line text-xs font-bold text-foreground hover:bg-line touch-target transition-colors"
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  isPinActive ? "bg-gain" : "bg-muted/40"
+                }`}
+              />
+              <span>{isPinActive ? "Actif (Modifier)" : "Activer"}</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -221,6 +250,18 @@ export function ProfileView({
           {content.profile.v1Note}
         </p>
       </div>
+
+      {/* Modal de réglages du Code PIN */}
+      <PinSettingsModal
+        isOpen={isPinModalOpen}
+        userId={currentUser.id}
+        isPinActive={isPinActive}
+        onClose={() => setIsPinModalOpen(false)}
+        onSuccess={(msg) => {
+          setIsPinActive(hasPinConfigured(currentUser.id));
+          onShowToast?.(msg);
+        }}
+      />
 
       {/* Modal de suppression irréversible du compte */}
       <DeleteAccountModal
