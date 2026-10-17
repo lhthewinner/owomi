@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Thème clair - issu de la maquette */
+  --bg: #F8FAFC;
+  --card: #FFFFFF;
+  --card2: #F1F5F9;
+  --text: #0F172A;
+  --muted: #64748B;
+  --line: #E2E8F0;
+
+  --primary: #10B981;
+  --primary-d: #047857;
+  --accent: #6366F1;
+
+  --gain: #22C55E;
+  --spend: #F97316;
+  --warn: #F59E0B;
+  --danger: #EF4444;
+
+  --shadow: 0 6px 24px rgba(15, 23, 42, 0.08);
+  --frame: #0F172A;
+}
+
+:root[data-theme="dark"],
+.dark {
+  /* Thème sombre - issu de la maquette */
+  --bg: #0B1220;
+  --card: #151E32;
+  --card2: #1D2840;
+  --text: #E2E8F0;
+  --muted: #94A3B8;
+  --line: #26334F;
+
+  --primary: #2DD4BF;
+  --primary-d: #14B8A6;
+  --accent: #A78BFA;
+
+  --gain: #4ADE80;
+  --spend: #FB923C;
+  --warn: #FBBF24;
+  --danger: #F87171;
+
+  --shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  --frame: #020617;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Chiffres à largeur fixe pour aligner les montants */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* Zone tactile minimale accessible de 44px */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
