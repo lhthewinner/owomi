@@ -14,6 +14,7 @@ import {
 } from "@/components/operations/QuickAddSheet";
 import { BudgetView } from "@/components/operations/BudgetView";
 import { BalanceView } from "@/components/balance/BalanceView";
+import { HistoryView } from "@/components/history/HistoryView";
 import { ProfileView } from "@/components/profile/ProfileView";
 import { Toast } from "@/components/ui/Toast";
 import { createClient } from "@/lib/supabase/client";
@@ -231,6 +232,7 @@ export default function HomePage() {
                     setIsAddOpen(true);
                   }}
                   onGoToBilan={() => setActiveTab("bilan")}
+                  onGoToHistory={() => setActiveTab("history")}
                   onGoToProfile={() => setActiveTab("profile")}
                   onShowToast={(msg) => setToastMessage(msg)}
                   refreshTrigger={refreshTrigger}
@@ -270,6 +272,8 @@ export default function HomePage() {
                   onBack={() => setActiveTab("dashboard")}
                   onLogout={handleLogout}
                   onDeletedAccount={handleDeletedAccount}
+                  onShowToast={(msg) => setToastMessage(msg)}
+                  onCurrencyChange={() => setRefreshTrigger((t) => t + 1)}
                 />
               )}
 
@@ -281,26 +285,13 @@ export default function HomePage() {
               )}
 
               {activeTab === "history" && (
-                <div className="flex flex-col items-center justify-center min-h-[460px] text-center p-4 space-y-4 animate-fadeIn">
-                  <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
-                    <Wallet className="w-7 h-7" />
-                  </div>
-                  <div>
-                    <h2 className="text-base font-extrabold text-foreground">
-                      Historique détaillé (Lot 6)
-                    </h2>
-                    <p className="text-xs text-muted max-w-[260px] mx-auto mt-1 leading-relaxed">
-                      La vue groupée par jour avec filtres par catégorie et période sera activée dans le Lot 6.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("dashboard")}
-                    className="py-2.5 px-4 rounded-xl bg-card border border-line text-xs font-bold text-foreground hover:bg-card-secondary touch-target transition-colors"
-                  >
-                    Retour au tableau de bord
-                  </button>
-                </div>
+                <HistoryView
+                  onShowToast={(msg) => {
+                    setToastMessage(msg);
+                    setRefreshTrigger((t) => t + 1);
+                  }}
+                  refreshTrigger={refreshTrigger}
+                />
               )}
             </div>
 

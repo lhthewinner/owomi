@@ -11,7 +11,11 @@
  * - Dépense imprévue = absence de planned_expense_id (AGENTS.md règle 5).
  */
 
-import { getDateRange, formatDateRangeFrench } from "@/lib/utils/date";
+import {
+  getDateRange,
+  formatDateRangeFrench,
+  formatDateFrench,
+} from "@/lib/utils/date";
 
 export type PeriodType = "day" | "week" | "month";
 
@@ -353,3 +357,59 @@ export function calculatePlannedExpenseProgress(
 
   return { status, left, progressPercent };
 }
+
+export interface GenericOperation {
+  id: string;
+  kind: "expense" | "income" | "loan";
+  amount: number;
+  date: string;
+  createdAt: string;
+  [key: string]: unknown;
+}
+
+export interface DailyGroup<T> {
+  date: string; // YYYY-MM-DD
+  formattedDate: string; // Ex: "samedi 17 octobre"
+  totalExpenses: number;
+  totalIncomes: number;
+  operations: T[];
+}
+
+/**
+ * Regroupe les opérations par jour (date YYYY-MM-DD) et calcule les totaux dépensé/gagné de chaque jour.
+ * Trié par date décroissante (plus récent d'abord).
+ */
+export function groupOperationsByDay<T extends GenericOperation>(
+  operations: T[]
+): DailyGroup<T>[] {
+  const groups: Record<string, DailyGroup<T>> = {};
+
+  for (const op of operations) {
+    if (!groups[op.date]) {
+      groups[op.date] = {
+        date: op.date,
+        formattedDate: formatDateFrench(op.date),
+        totalExpenses: 0,
+        totalIncomes: 0,
+        operations: [],
+      };
+    }
+
+    groups[op.date].operations.push(op);
+
+    if (op.kind === "expense") {
+      groups[op.date].totalExpenses += op.amount;
+    } else if (op.kind === "income") {
+      groups[op.date].totalIncomes += op.amount;
+    }
+  }
+
+  // Tri des opérations au sein de chaque jour par heure de création décroissante
+  Object.values(groups).forEach((g) => {
+    g.operations.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  });
+
+  // Tri des jours du plus récent au plus ancien
+  return Object.values(groups).sort((a, b) => b.date.localeCompare(a.date));
+}
+

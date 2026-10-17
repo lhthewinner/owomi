@@ -2,9 +2,11 @@ import { describe, it, expect } from "vitest";
 import {
   calculateBalance,
   calculatePlannedExpenseProgress,
+  groupOperationsByDay,
   type ExpenseItem,
   type IncomeItem,
   type LoanItem,
+  type GenericOperation,
 } from "./calculator";
 
 describe("Module unique de calcul du bilan (calculator.ts)", () => {
@@ -318,4 +320,48 @@ describe("Module unique de calcul du bilan (calculator.ts)", () => {
     expect(res.byCategory[0].amount).toBe(6000);
     expect(res.byCategory[0].percentage).toBe(60);
   });
+
+  // 9. Regroupement par jour pour l'historique
+  it("regroupe correctement les opérations par jour avec totaux de journée et tri chronologique", () => {
+    const ops: GenericOperation[] = [
+      {
+        id: "exp-1",
+        kind: "expense",
+        amount: 4500,
+        date: "2026-10-17",
+        createdAt: "2026-10-17T10:00:00Z",
+      },
+      {
+        id: "inc-1",
+        kind: "income",
+        amount: 10000,
+        date: "2026-10-17",
+        createdAt: "2026-10-17T12:00:00Z",
+      },
+      {
+        id: "exp-2",
+        kind: "expense",
+        amount: 3000,
+        date: "2026-10-16",
+        createdAt: "2026-10-16T18:00:00Z",
+      },
+    ];
+
+    const groups = groupOperationsByDay(ops);
+
+    expect(groups.length).toBe(2);
+    // Premier jour : 2026-10-17 (le plus récent)
+    expect(groups[0].date).toBe("2026-10-17");
+    expect(groups[0].totalExpenses).toBe(4500);
+    expect(groups[0].totalIncomes).toBe(10000);
+    expect(groups[0].operations.length).toBe(2);
+    // L'opération la plus récente en premier (inc-1 à 12:00 avant exp-1 à 10:00)
+    expect(groups[0].operations[0].id).toBe("inc-1");
+
+    // Second jour : 2026-10-16
+    expect(groups[1].date).toBe("2026-10-16");
+    expect(groups[1].totalExpenses).toBe(3000);
+    expect(groups[1].totalIncomes).toBe(0);
+  });
 });
+

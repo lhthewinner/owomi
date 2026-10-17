@@ -34,6 +34,7 @@ interface DashboardViewProps {
   onToggleTheme: () => void;
   onOpenAdd: () => void;
   onGoToBilan: () => void;
+  onGoToHistory?: () => void;
   onGoToProfile: () => void;
   onShowToast: (message: string) => void;
   refreshTrigger?: number;
@@ -45,6 +46,7 @@ export function DashboardView({
   onToggleTheme,
   onOpenAdd,
   onGoToBilan,
+  onGoToHistory,
   onGoToProfile,
   onShowToast,
   refreshTrigger = 0,
@@ -231,6 +233,15 @@ export function DashboardView({
           <h2 className="text-sm font-extrabold text-foreground tracking-tight">
             {content.dashboard.recentOps}
           </h2>
+          {onGoToHistory && (
+            <button
+              type="button"
+              onClick={onGoToHistory}
+              className="text-xs font-semibold text-primary hover:underline touch-target"
+            >
+              {content.dashboard.viewAll}
+            </button>
+          )}
         </div>
 
         {(!data?.recentOperations || data.recentOperations.length === 0) ? (

@@ -868,3 +868,182 @@ export async function getBalanceDataAction(
   };
 }
 
+/**
+ * Mise à jour de la devise préférée de l'utilisateur (Story P1).
+ */
+export async function updateCurrencyAction(currency: string): Promise<OperationResult> {
+  const cleanCurrency = currency.trim();
+  if (!cleanCurrency || cleanCurrency.length > 10) {
+    return { success: false, message: "Devise invalide." };
+  }
+
+  const supabase = await createServerSideClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, message: content.auth.errors.invalidCredentials };
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ currency: cleanCurrency, updated_at: new Date().toISOString() })
+    .eq("id", user.id);
+
+  if (error) {
+    return { success: false, message: "Impossible de modifier la devise." };
+  }
+
+  return { success: true };
+}
+
+/**
+ * Récupération des préférences utilisateur (devise, thème, fuseau horaire, salaire).
+ */
+export async function getProfilePreferencesAction(): Promise<
+  OperationResult<{
+    currency: string;
+    timezone: string;
+    theme: string;
+    monthlySalary: number;
+  }>
+> {
+  const supabase = await createServerSideClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, message: content.auth.errors.invalidCredentials };
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("currency, timezone, theme, monthly_salary")
+    .eq("id", user.id)
+    .single();
+
+  return {
+    success: true,
+    data: {
+      currency: profile?.currency || "FCFA",
+      timezone: profile?.timezone || "Africa/Porto-Novo",
+      theme: profile?.theme || "light",
+      monthlySalary: profile?.monthly_salary || 0,
+    },
+  };
+}
+
+/**
+ * Récupération de l'historique complet des opérations filtrables (Story H1).
+ */
+export async function getHistoryOperationsAction(
+  filter: "all" | "expenses" | "incomes" | "loans" = "all"
+): Promise<
+  OperationResult<{
+    operations: RecentOperation[];
+    currency: string;
+  }>
+> {
+  const supabase = await createServerSideClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, message: content.auth.errors.invalidCredentials };
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("currency")
+    .eq("id", user.id)
+    .single();
+
+  const currency = profile?.currency || "FCFA";
+
+  const fetchExpenses = filter === "all" || filter === "expenses";
+  const fetchIncomes = filter === "all" || filter === "incomes";
+  const fetchLoans = filter === "all" || filter === "loans";
+
+  const [expRes, incRes, loanRes] = await Promise.all([
+    fetchExpenses
+      ? supabase
+          .from("expenses")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("date", { ascending: false })
+      : Promise.resolve({ data: [] }),
+    fetchIncomes
+      ? supabase
+          .from("incomes")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("date", { ascending: false })
+      : Promise.resolve({ data: [] }),
+    fetchLoans
+      ? supabase
+          .from("loans")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("date", { ascending: false })
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  const ops: RecentOperation[] = [];
+
+  (expRes.data || []).forEach((e) => {
+    ops.push({
+      kind: "expense",
+      id: e.id,
+      amount: e.amount,
+      category: e.category,
+      date: e.date,
+      note: e.note,
+      plannedExpenseId: e.planned_expense_id,
+      createdAt: e.created_at,
+    });
+  });
+
+  (incRes.data || []).forEach((i) => {
+    ops.push({
+      kind: "income",
+      id: i.id,
+      amount: i.amount,
+      source: i.source,
+      date: i.date,
+      createdAt: i.created_at,
+    });
+  });
+
+  (loanRes.data || []).forEach((l) => {
+    ops.push({
+      kind: "loan",
+      id: l.id,
+      amount: l.amount,
+      direction: l.direction,
+      counterpart: l.counterpart,
+      date: l.date,
+      note: l.note,
+      createdAt: l.created_at,
+    });
+  });
+
+  // Tri par date décroissante puis par date de création décroissante
+  ops.sort((a, b) => {
+    const cmp = b.date.localeCompare(a.date);
+    if (cmp !== 0) return cmp;
+    return b.createdAt.localeCompare(a.createdAt);
+  });
+
+  return {
+    success: true,
+    data: {
+      operations: ops,
+      currency,
+    },
+  };
+}
+
+
