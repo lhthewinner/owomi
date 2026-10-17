@@ -62,6 +62,7 @@ export function ProfileView({
         const cur = res.data.currency;
         if (cur === "€") setCurrency("EUR");
         else if (cur === "$") setCurrency("USD");
+        else if (cur === "₦" || cur.toUpperCase() === "NAIRA") setCurrency("NGN");
         else setCurrency(cur);
       }
     }

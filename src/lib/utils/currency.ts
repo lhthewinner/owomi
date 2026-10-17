@@ -6,14 +6,7 @@
  * - Support étendu multi-devises (FCFA, EUR, USD, CAD, GBP, GNF, MAD)
  */
 
-export type SupportedCurrency =
-  | "FCFA"
-  | "EUR"
-  | "USD"
-  | "CAD"
-  | "GBP"
-  | "GNF"
-  | "MAD";
+export type SupportedCurrency = "FCFA" | "EUR" | "USD" | "NGN";
 
 export interface CurrencyConfig {
   code: SupportedCurrency;
@@ -25,10 +18,7 @@ export const SUPPORTED_CURRENCIES: CurrencyConfig[] = [
   { code: "FCFA", symbol: "FCFA", label: "FCFA — Franc CFA" },
   { code: "EUR", symbol: "€", label: "EUR (€) — Euro" },
   { code: "USD", symbol: "$", label: "USD ($) — Dollar américain" },
-  { code: "CAD", symbol: "CA$", label: "CAD ($) — Dollar canadien" },
-  { code: "GBP", symbol: "£", label: "GBP (£) — Livre sterling" },
-  { code: "GNF", symbol: "FG", label: "GNF (FG) — Franc guinéen" },
-  { code: "MAD", symbol: "DH", label: "MAD (DH) — Dirham marocain" },
+  { code: "NGN", symbol: "₦", label: "Naira (₦) — Naira nigérian" },
 ];
 
 /**
@@ -43,18 +33,10 @@ export function getCurrencySymbol(currency: string = "FCFA"): string {
     case "USD":
     case "$":
       return "$";
-    case "CAD":
-    case "CA$":
-      return "CA$";
-    case "GBP":
-    case "£":
-      return "£";
-    case "GNF":
-    case "FG":
-      return "FG";
-    case "MAD":
-    case "DH":
-      return "DH";
+    case "NGN":
+    case "NAIRA":
+    case "₦":
+      return "₦";
     case "FCFA":
     case "XOF":
     case "XAF":

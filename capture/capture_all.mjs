@@ -67,7 +67,7 @@ const PAGES_TO_CAPTURE = [
     name: "11_profil",
     url: "http://localhost:3000/?demo=1&tab=profile",
     title: "Profil & Paramètres",
-    description: "Choix de la devise (FCFA, EUR, USD), bascule de thème clair/sombre, option 'Solde figé à minuit', déconnexion et suppression sécurisée.",
+    description: "Choix de la devise (FCFA, EUR, USD, Naira), bascule de thème clair/sombre, option 'Solde figé à minuit', déconnexion et suppression sécurisée.",
   },
   {
     name: "12_mode_sombre",

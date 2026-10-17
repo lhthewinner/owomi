@@ -148,7 +148,7 @@ Si tu es bloqué, dis pourquoi et propose deux options. N'invente jamais de donn
 | 7 | PWA et mode hors ligne |
 | 8 | Finitions : accessibilité, états vides et erreurs, performance |
 | 9 | Déploiement et vérification finale de sécurité |
-| 10 | Vues Semestre (6 mois) & Année (1 an) dans le Bilan, et choix de devises étendu dans le Profil (FCFA, EUR, USD, CAD, GBP, GNF, MAD) |
+| 10 | Vues Semestre (6 mois) & Année (1 an) dans le Bilan, et choix de devises dans le Profil (FCFA, EUR, USD, Naira) |
 | 11 | Dépenses prévues récurrentes, reconduction automatique et ajustement des montants en début ou fin de période |
 | 12 | Espace Administrateur sécurisé (rôle admin, liste des utilisateurs, modération des comptes, statistiques anonymes d'usage) |
 

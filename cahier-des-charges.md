@@ -97,7 +97,7 @@ Le MVP compte 21 stories, chacune avec des critères d'acceptation testables ; l
 | **B4** | En tant qu'utilisateur, je consulte mon bilan sur 6 mois (semestre) ou 1 an (année). | Sélecteurs Semestre et Année disponibles ; calcul immédiat des totaux dépensé, gagné hors salaire, cumul des salaires et économies ; répartition par catégorie sur la période étendue. |
 | **H1** | En tant qu'utilisateur, je consulte mon historique. | Liste groupée par jour ; filtres Tout, Dépenses, Revenus ; filtre par période et catégorie. |
 | **P1** | En tant qu'utilisateur, je choisis mon thème (clair ou sombre). | Thème clair ou sombre mémorisé sur l'appareil et appliqué immédiatement. |
-| **P2** | En tant qu'utilisateur, je choisis ma devise parmi une sélection internationale. | Choix parmi FCFA, EUR, USD, CAD, GBP, GNF, MAD ; formatage instantané des montants avec symbole approprié dans toute l'interface sans rechargement. |
+| **P2** | En tant qu'utilisateur, je choisis ma devise parmi la sélection disponible. | Choix parmi FCFA, EUR (€), USD ($) et Naira (₦) ; formatage instantané des montants avec symbole approprié dans toute l'interface sans rechargement. |
 | **D5** | En tant qu'utilisateur, je définis une dépense prévue comme récurrente et j'ajuste son montant lors de sa reconduction. | Option « Récurrente » lors de la création d'une prévue mensuelle ; reconduction automatique à chaque début de période ; possibilité pour l'utilisateur de modifier et d'ajuster le montant au début ou à la fin de chaque mois. |
 | **AD1** | En tant qu'administrateur, j'accède à un espace sécurisé de modération et de suivi. | Accès strictement réservé aux utilisateurs ayant le rôle `admin` ; consultation de la liste des comptes inscrits (nom, prénom, email, date d'inscription, statut) ; actions de modération (activer, suspendre, bannir) ; statistiques globales anonymes ; aucun accès aux montants financiers des utilisateurs (protection RLS stricte). |
 | **G1** | En tant que visiteur, je comprends la promesse de l'application. | L'accueil présente la promesse en une phrase, un aperçu de bilan et les boutons Créer un compte et Se connecter. |
@@ -121,7 +121,7 @@ Le périmètre couvre les écrans essentiels de l'application, organisés pour u
 | **Historique** | Utilisateur | Opérations groupées par jour, filtrables, suppression |
 | **Budget : dépenses prévues** | Utilisateur | Filtre jour, semaine, mois ; gestion des dépenses prévues récurrentes (loyer, abonnements) avec ajustement de montant ; prévu, dépensé, reste, progression, bouton Ajouter un règlement |
 | **Budget : revenus et prêts** | Utilisateur | Salaire mensuel modifiable en haut, autres revenus, prêts |
-| **Profil** | Utilisateur | Sélecteur de devise étendu (FCFA, EUR, USD, CAD, GBP, GNF, MAD), thème, code PIN de sécurité, déconnexion, suppression du compte |
+| **Profil** | Utilisateur | Sélecteur de devise (FCFA, EUR, USD, Naira), thème, code PIN de sécurité, déconnexion, suppression du compte |
 | **Espace Administrateur** | Administrateur | Tableau de bord réservé aux administrateurs : liste des utilisateurs inscrits, statut (actif, suspendu, banni), statistiques anonymes d'usage. |
 | **Bandeau d’état de connexion** | Utilisateur | Visible sur tous les écrans connectés : Hors ligne, X opérations en attente, Synchronisé. |
 

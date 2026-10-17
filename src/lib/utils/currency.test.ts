@@ -19,10 +19,8 @@ describe("formatAmount", () => {
   it("formate les devises internationales avec le bon symbole", () => {
     expect(formatAmount(1500, "EUR")).toMatch(/1[\s\u202f]500 €/);
     expect(formatAmount(2000, "USD")).toMatch(/2[\s\u202f]000 \$/);
-    expect(formatAmount(3000, "CAD")).toMatch(/3[\s\u202f]000 CA\$/);
-    expect(formatAmount(500, "GBP")).toMatch(/500 £/);
-    expect(formatAmount(50000, "GNF")).toMatch(/50[\s\u202f]000 FG/);
-    expect(formatAmount(800, "MAD")).toMatch(/800 DH/);
+    expect(formatAmount(50000, "NGN")).toMatch(/50[\s\u202f]000 ₦/);
+    expect(formatAmount(50000, "Naira")).toMatch(/50[\s\u202f]000 ₦/);
   });
 });
 
@@ -40,22 +38,22 @@ describe("formatSignedAmount", () => {
   it("gère le signe négatif avec différentes devises", () => {
     expect(formatSignedAmount(-100, "EUR")).toBe("− 100 €");
     expect(formatSignedAmount(-50, "USD")).toBe("− 50 $");
+    expect(formatSignedAmount(-2500, "NGN")).toMatch(/^− 2[\s\u202f]500 ₦$/);
   });
 });
 
 describe("getCurrencySymbol et SUPPORTED_CURRENCIES", () => {
-  it("contient exactement les 7 devises demandées", () => {
+  it("contient exactement les 4 devises demandées (FCFA, EUR, USD, Naira)", () => {
     const codes = SUPPORTED_CURRENCIES.map((c) => c.code);
-    expect(codes).toEqual(["FCFA", "EUR", "USD", "CAD", "GBP", "GNF", "MAD"]);
+    expect(codes).toEqual(["FCFA", "EUR", "USD", "NGN"]);
   });
 
   it("renvoie les bons symboles pour chaque code", () => {
     expect(getCurrencySymbol("FCFA")).toBe("FCFA");
     expect(getCurrencySymbol("EUR")).toBe("€");
     expect(getCurrencySymbol("USD")).toBe("$");
-    expect(getCurrencySymbol("CAD")).toBe("CA$");
-    expect(getCurrencySymbol("GBP")).toBe("£");
-    expect(getCurrencySymbol("GNF")).toBe("FG");
-    expect(getCurrencySymbol("MAD")).toBe("DH");
+    expect(getCurrencySymbol("NGN")).toBe("₦");
+    expect(getCurrencySymbol("NAIRA")).toBe("₦");
+    expect(getCurrencySymbol("₦")).toBe("₦");
   });
 });

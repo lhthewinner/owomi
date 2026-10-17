@@ -176,10 +176,7 @@ export const content = {
       fcfa: "FCFA — Franc CFA",
       eur: "EUR (€) — Euro",
       usd: "USD ($) — Dollar américain",
-      cad: "CAD ($) — Dollar canadien",
-      gbp: "GBP (£) — Livre sterling",
-      gnf: "GNF (FG) — Franc guinéen",
-      mad: "MAD (DH) — Dirham marocain",
+      ngn: "Naira (₦) — Naira nigérian",
     },
   },
   common: {

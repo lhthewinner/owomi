@@ -1,6 +1,6 @@
 # Rapport de Test Visuel — Application Asoro
 
-*Généré le 17/10/2026 16:27:03*
+*Généré le 17/10/2026 17:11:27*
 
 Ce dossier regroupe les captures d'écran réelles issues des tests automatiques sur l'ensemble des écrans et fonctionnalités de l'application Asoro.
 
@@ -16,7 +16,7 @@ Ce dossier regroupe les captures d'écran réelles issues des tests automatiques
 | 8 | **Finances, Salaires & Prêts** | Gestion du salaire mensuel récurrent, revenus exceptionnels, dettes et créances avec calcul instantané du net. | [08_finances_et_prets.png](./08_finances_et_prets.png) |
 | 9 | **Bilan & Analyse financière** | Bilan périodique (Jour, Semaine, Mois) : solde net, moyenne disponible par jour, graphique d'évolution et répartition par catégorie. | [09_bilan.png](./09_bilan.png) |
 | 10 | **Historique des opérations** | Journal chronologique groupé par jour, totaux quotidiens, filtres (Tout, Dépenses, Revenus, Prêts) et suppression avec confirmation. | [10_historique.png](./10_historique.png) |
-| 11 | **Profil & Paramètres** | Choix de la devise (FCFA, EUR, USD), bascule de thème clair/sombre, option 'Solde figé à minuit', déconnexion et suppression sécurisée. | [11_profil.png](./11_profil.png) |
+| 11 | **Profil & Paramètres** | Choix de la devise (FCFA, EUR, USD, Naira), bascule de thème clair/sombre, option 'Solde figé à minuit', déconnexion et suppression sécurisée. | [11_profil.png](./11_profil.png) |
 | 12 | **Tableau de bord — Thème sombre** | Rendu optimal et contrasté du thème sombre conforme à la maquette et aux critères WCAG AA. | [12_mode_sombre.png](./12_mode_sombre.png) |
 | 13 | **Déverrouillage par code PIN** | Écran de sécurité tactile : saisie du PIN à 4 chiffres, protection anti-brute-force (3 essais max) et bouton de secours 'PIN oublié'. | [13_verrouillage_pin.png](./13_verrouillage_pin.png) |
 | 14 | **Bilan — Vue Semestre (6 mois)** | Analyse financière semestrielle avec graphique d'évolution sur 6 barres mensuelles, totaux cumulés et répartition par catégorie. | [14_bilan_semestre.png](./14_bilan_semestre.png) |
@@ -78,7 +78,7 @@ Ce dossier regroupe les captures d'écran réelles issues des tests automatiques
 ![Historique des opérations](./10_historique.png)
 
 ### 11. Profil & Paramètres
-> Choix de la devise (FCFA, EUR, USD), bascule de thème clair/sombre, option 'Solde figé à minuit', déconnexion et suppression sécurisée.
+> Choix de la devise (FCFA, EUR, USD, Naira), bascule de thème clair/sombre, option 'Solde figé à minuit', déconnexion et suppression sécurisée.
 
 ![Profil & Paramètres](./11_profil.png)
 
