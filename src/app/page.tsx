@@ -27,10 +27,10 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-slate-100 dark:bg-[#05080F] flex items-center justify-center p-0 sm:p-4">
       {/* Conteneur mobile centré (conforme à la maquette de 390px sur grand écran et 100% sur mobile) */}
-      <div className="w-full sm:w-[390px] min-h-screen sm:min-h-[820px] sm:max-h-[96vh] bg-background sm:border-[10px] sm:border-slate-900 dark:sm:border-slate-950 sm:rounded-[38px] sm:shadow-2xl overflow-hidden flex flex-col justify-between p-6 sm:p-7 relative transition-colors duration-200">
+      <div className="w-full sm:w-[390px] min-h-screen sm:min-h-[820px] sm:max-h-[96vh] bg-background sm:border-[10px] sm:border-slate-900 dark:sm:border-slate-950 sm:rounded-[38px] sm:shadow-2xl overflow-hidden flex flex-col p-5 sm:p-6 relative transition-colors duration-200">
         
         {/* En-tête avec Logo et Bouton de thème */}
-        <div className="flex items-center justify-between pt-2">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5 font-extrabold text-xl tracking-tight text-foreground">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-dark to-primary flex items-center justify-center text-white shadow-sm">
               <Wallet className="w-5 h-5 text-white" aria-hidden="true" />
@@ -47,15 +47,15 @@ export default function HomePage() {
         </div>
 
         {/* Corps principal : Titre et Promesse */}
-        <div className="my-auto py-6">
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight leading-[1.15] mb-4">
+        <div className="mt-6 mb-4">
+          <h1 className="text-3xl font-extrabold text-foreground tracking-tight leading-[1.15] mb-3">
             {content.welcome.title}
             <br />
             ton <span className="text-primary">{content.welcome.titleHighlight}</span>
             {content.welcome.titleEnd}
           </h1>
 
-          <p className="text-muted text-[14.5px] leading-relaxed mb-6">
+          <p className="text-muted text-[14px] leading-relaxed mb-5">
             {content.app.description}
           </p>
 
@@ -83,6 +83,9 @@ export default function HomePage() {
             </div>
           </div>
         </div>
+
+        {/* Espaceur flexible pour caler les boutons en bas */}
+        <div className="flex-1 min-h-[20px]" />
 
         {/* Boutons d'action et notice hors ligne */}
         <div className="space-y-3 pb-2">
