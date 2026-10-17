@@ -39,6 +39,10 @@ import {
 } from "./demoData";
 
 async function isDemoSession(): Promise<boolean> {
+  // En production, le mode démo est strictement désactivé : authentification réelle obligatoire
+  if (process.env.NODE_ENV === "production") {
+    return false;
+  }
   try {
     const cookieStore = await cookies();
     return cookieStore.get("asoro_demo")?.value === "true";

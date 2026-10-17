@@ -51,75 +51,78 @@ export default function HomePage() {
     setIsDark(initialDark);
     document.documentElement.setAttribute("data-theme", initialDark ? "dark" : "light");
 
-    // Support Démo / Mode de prévisualisation (pour capture d'écran et test visuel)
+    // Support Démo / Mode de prévisualisation (actif uniquement en développement local)
+    const isLocalEnv = process.env.NODE_ENV !== "production";
     const urlParams = new URLSearchParams(window.location.search);
     const viewParam = urlParams.get("view");
 
-    if (viewParam === "signup") {
-      setCurrentUser(null);
-      setAuthTab("signup");
-      setView("auth");
-      return;
-    } else if (viewParam === "login") {
-      setCurrentUser(null);
-      setAuthTab("login");
-      setView("auth");
-      return;
-    } else if (viewParam === "forgot") {
-      setCurrentUser(null);
-      setView("forgot");
-      return;
-    } else if (viewParam === "welcome") {
-      setCurrentUser(null);
-      setView("welcome");
-      return;
-    } else if (viewParam === "pin") {
-      setCurrentUser({
-        id: "demo-user-id",
-        email: "alex@asoro.app",
-        user_metadata: { name: "Alex" },
-        app_metadata: {},
-        aud: "authenticated",
-        created_at: new Date().toISOString(),
-      } as User);
-      setView("authenticated");
-      setIsPinUnlocked(false);
-      return;
-    }
+    if (isLocalEnv) {
+      if (viewParam === "signup") {
+        setCurrentUser(null);
+        setAuthTab("signup");
+        setView("auth");
+        return;
+      } else if (viewParam === "login") {
+        setCurrentUser(null);
+        setAuthTab("login");
+        setView("auth");
+        return;
+      } else if (viewParam === "forgot") {
+        setCurrentUser(null);
+        setView("forgot");
+        return;
+      } else if (viewParam === "welcome") {
+        setCurrentUser(null);
+        setView("welcome");
+        return;
+      } else if (viewParam === "pin") {
+        setCurrentUser({
+          id: "demo-user-id",
+          email: "alex@asoro.app",
+          user_metadata: { name: "Alex" },
+          app_metadata: {},
+          aud: "authenticated",
+          created_at: new Date().toISOString(),
+        } as User);
+        setView("authenticated");
+        setIsPinUnlocked(false);
+        return;
+      }
 
-    const isDemo =
-      urlParams.get("demo") === "1" ||
-      document.cookie.includes("asoro_demo=true");
+      const isDemo =
+        urlParams.get("demo") === "1" ||
+        document.cookie.includes("asoro_demo=true");
 
-    if (isDemo) {
-      document.cookie = "asoro_demo=true; path=/";
-      setCurrentUser({
-        id: "demo-user-id",
-        email: "alex@asoro.app",
-        user_metadata: { name: "Alex" },
-        app_metadata: {},
-        aud: "authenticated",
-        created_at: new Date().toISOString(),
-      } as User);
-      setView("authenticated");
-      setIsPinUnlocked(urlParams.get("lockPin") !== "1");
+      if (isDemo) {
+        document.cookie = "asoro_demo=true; path=/";
+        setCurrentUser({
+          id: "demo-user-id",
+          email: "alex@asoro.app",
+          user_metadata: { name: "Alex" },
+          app_metadata: {},
+          aud: "authenticated",
+          created_at: new Date().toISOString(),
+        } as User);
+        setView("authenticated");
+        setIsPinUnlocked(urlParams.get("lockPin") !== "1");
 
-      const tabParam = urlParams.get("tab") as NavTab | "profile";
-      if (tabParam && ["dashboard", "budget", "bilan", "history", "profile"].includes(tabParam)) {
-        setActiveTab(tabParam);
+        const tabParam = urlParams.get("tab") as NavTab | "profile";
+        if (tabParam && ["dashboard", "budget", "bilan", "history", "profile"].includes(tabParam)) {
+          setActiveTab(tabParam);
+        }
+        const subParam = urlParams.get("subtab") as "planned" | "income";
+        if (subParam && ["planned", "income"].includes(subParam)) {
+          setBudgetSubTab(subParam);
+        }
+        if (urlParams.get("openAdd") === "1") {
+          setIsAddOpen(true);
+        }
+        if (urlParams.get("dark") === "1") {
+          setIsDark(true);
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
+        return;
       }
-      const subParam = urlParams.get("subtab") as "planned" | "income";
-      if (subParam && ["planned", "income"].includes(subParam)) {
-        setBudgetSubTab(subParam);
-      }
-      if (urlParams.get("openAdd") === "1") {
-        setIsAddOpen(true);
-      }
-      if (urlParams.get("dark") === "1") {
-        setIsDark(true);
-        document.documentElement.setAttribute("data-theme", "dark");
-      }
-      return;
     }
 
     // Vérification d'une session existante (persistance hors ligne via getSession)
