@@ -5,6 +5,11 @@ import type {
   RecentOperation,
 } from "./actions";
 import type { Database } from "@/types/database";
+import {
+  calculateBalance,
+  calculatePlannedExpenseProgress,
+  type PeriodType,
+} from "@/lib/balance/calculator";
 
 type IncomeRow = Database["public"]["Tables"]["incomes"]["Row"];
 type LoanRow = Database["public"]["Tables"]["loans"]["Row"];
@@ -72,49 +77,65 @@ export function getDemoDashboardData(todayStr: string): DashboardData {
   };
 }
 
-export function getDemoPlannedExpenses(todayStr: string): PlannedExpensesSummary {
+export function getDemoPlannedExpenses(
+  todayStr: string,
+  customAmounts: Record<string, number> = {}
+): PlannedExpensesSummary {
+  const rawItems = [
+    {
+      id: "pe-1",
+      name: "Loyer mensuel",
+      amount: customAmounts["pe-1"] ?? 80000,
+      category: "logement",
+      period: "month" as const,
+      startDate: todayStr,
+      isRecurring: true,
+      spent: 80000,
+    },
+    {
+      id: "pe-2",
+      name: "Courses & Marché",
+      amount: customAmounts["pe-2"] ?? 60000,
+      category: "alimentation",
+      period: "month" as const,
+      startDate: todayStr,
+      isRecurring: false,
+      spent: 45000,
+    },
+    {
+      id: "pe-3",
+      name: "Facture électricité",
+      amount: customAmounts["pe-3"] ?? 15000,
+      category: "factures",
+      period: "month" as const,
+      startDate: todayStr,
+      isRecurring: true,
+      spent: 0,
+    },
+  ];
+
+  const items = rawItems.map((p) => {
+    const { status, left, progressPercent } = calculatePlannedExpenseProgress(
+      p.amount,
+      p.spent
+    );
+    return {
+      ...p,
+      left,
+      status,
+      progressPercent,
+    };
+  });
+
+  const totalPlanned = items.reduce((sum, i) => sum + i.amount, 0);
+  const totalSpent = items.reduce((sum, i) => sum + i.spent, 0);
+  const totalLeft = Math.max(0, totalPlanned - totalSpent);
+
   return {
-    totalPlanned: 155000,
-    totalSpent: 125000,
-    totalLeft: 30000,
-    items: [
-      {
-        id: "pe-1",
-        name: "Loyer mensuel",
-        amount: 80000,
-        category: "logement",
-        period: "month",
-        startDate: todayStr,
-        spent: 80000,
-        left: 0,
-        status: "solde",
-        progressPercent: 100,
-      },
-      {
-        id: "pe-2",
-        name: "Courses & Marché",
-        amount: 60000,
-        category: "alimentation",
-        period: "month",
-        startDate: todayStr,
-        spent: 45000,
-        left: 15000,
-        status: "cours",
-        progressPercent: 75,
-      },
-      {
-        id: "pe-3",
-        name: "Facture électricité",
-        amount: 15000,
-        category: "factures",
-        period: "month",
-        startDate: todayStr,
-        spent: 0,
-        left: 15000,
-        status: "venir",
-        progressPercent: 0,
-      },
-    ],
+    totalPlanned,
+    totalSpent,
+    totalLeft,
+    items,
   };
 }
 
@@ -168,8 +189,6 @@ export function getDemoIncomesAndLoans(todayStr: string): {
     ],
   };
 }
-
-import { calculateBalance, type PeriodType } from "@/lib/balance/calculator";
 
 export function getDemoBalanceData(
   period: PeriodType,

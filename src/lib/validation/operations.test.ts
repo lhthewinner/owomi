@@ -174,4 +174,33 @@ describe("Validation des dépenses prévues (Story D3)", () => {
       }).success
     ).toBe(false);
   });
+
+  it("gère l'option isRecurring (Story D5)", () => {
+    const resDefault = plannedExpenseInputSchema.safeParse({
+      name: "Abonnement Internet",
+      amount: 15000,
+      category: "Factures",
+      period: "month",
+      startDate: "2026-10-01",
+      localId: dummyUuid,
+    });
+    expect(resDefault.success).toBe(true);
+    if (resDefault.success) {
+      expect(resDefault.data.isRecurring).toBe(false);
+    }
+
+    const resRecurring = plannedExpenseInputSchema.safeParse({
+      name: "Loyer mensuel",
+      amount: 75000,
+      category: "Logement",
+      period: "month",
+      startDate: "2026-10-01",
+      isRecurring: true,
+      localId: dummyUuid,
+    });
+    expect(resRecurring.success).toBe(true);
+    if (resRecurring.success) {
+      expect(resRecurring.data.isRecurring).toBe(true);
+    }
+  });
 });

@@ -71,6 +71,7 @@ export const plannedExpenseInputSchema = z.object({
     errorMap: () => ({ message: "Période invalide (jour, semaine ou mois requis)" }),
   }),
   startDate: dateStringSchema,
+  isRecurring: z.boolean().optional().default(false),
   localId: localIdSchema,
 });
 

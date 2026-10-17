@@ -33,6 +33,7 @@ export function PlannedExpenseModal({
   const [category, setCategory] = useState<string>("Logement");
   const [period, setPeriod] = useState<"day" | "week" | "month">("month");
   const [startDate, setStartDate] = useState<string>(() => getTodayDateString(userTimezone));
+  const [isRecurring, setIsRecurring] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,12 +47,14 @@ export function PlannedExpenseModal({
       setCategory(editingItem.category);
       setPeriod(editingItem.period);
       setStartDate(editingItem.startDate);
+      setIsRecurring(editingItem.isRecurring ?? false);
     } else {
       setName("");
       setAmountStr("");
       setCategory("Logement");
       setPeriod("month");
       setStartDate(getTodayDateString(userTimezone));
+      setIsRecurring(false);
     }
     setError(null);
   }, [editingItem, isOpen, userTimezone]);
@@ -94,6 +97,7 @@ export function PlannedExpenseModal({
           category,
           period,
           startDate,
+          isRecurring,
         });
 
         if (!res.success) {
@@ -110,6 +114,7 @@ export function PlannedExpenseModal({
           category,
           period,
           startDate,
+          isRecurring,
           localId,
         });
 
@@ -273,6 +278,32 @@ export function PlannedExpenseModal({
                 className="w-full px-3.5 py-2.5 rounded-xl border border-line bg-card text-foreground text-xs outline-none focus:border-primary transition-colors touch-target"
               />
             </div>
+          </div>
+
+          {/* Option Récurrente (Story D5) */}
+          <div className="p-3 bg-card border border-line rounded-2xl flex items-center justify-between gap-3">
+            <div className="space-y-0.5">
+              <span className="text-xs font-bold text-foreground block">
+                Dépense récurrente
+              </span>
+              <p className="text-[11px] text-muted leading-tight">
+                Reconduction automatique chaque mois (ex : loyer, forfait).
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsRecurring((v) => !v)}
+              aria-label="Activer ou désactiver la récurrence"
+              className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-200 relative shrink-0 ${
+                isRecurring ? "bg-primary" : "bg-card-secondary border border-line"
+              }`}
+            >
+              <div
+                className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 transform ${
+                  isRecurring ? "translate-x-5" : "translate-x-0"
+                }`}
+              />
+            </button>
           </div>
 
           {/* Boutons d'action */}

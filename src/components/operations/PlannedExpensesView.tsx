@@ -10,12 +10,16 @@ import {
   AlertTriangle,
   Receipt,
   Calendar,
+  RefreshCw,
+  SlidersHorizontal,
+  X,
 } from "lucide-react";
 import { formatAmount } from "@/lib/utils/currency";
 import { getCategoryIcon } from "@/lib/constants/categories";
 import {
   getPlannedExpensesWithProgressAction,
   deletePlannedExpenseAction,
+  adjustPlannedExpenseAmountAction,
   type PlannedExpenseWithProgress,
   type PlannedExpensesSummary,
 } from "@/lib/operations/actions";
@@ -73,6 +77,12 @@ export function PlannedExpensesView({
   const [deletingItem, setDeletingItem] = useState<PlannedExpenseWithProgress | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
+  // Modal ajustement de montant (Story D5)
+  const [adjustingItem, setAdjustingItem] = useState<PlannedExpenseWithProgress | null>(null);
+  const [adjustedAmountStr, setAdjustedAmountStr] = useState<string>("");
+  const [isAdjusting, setIsAdjusting] = useState<boolean>(false);
+  const [adjustError, setAdjustError] = useState<string | null>(null);
+
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
@@ -91,13 +101,14 @@ export function PlannedExpensesView({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && deletingItem) {
-        setDeletingItem(null);
+      if (e.key === "Escape") {
+        if (deletingItem) setDeletingItem(null);
+        if (adjustingItem) setAdjustingItem(null);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [deletingItem]);
+  }, [deletingItem, adjustingItem]);
 
   const handleDeleteConfirm = async () => {
     if (!deletingItem) return;
@@ -113,6 +124,30 @@ export function PlannedExpensesView({
       }
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleAdjustConfirm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adjustingItem) return;
+    const newAmt = Number(adjustedAmountStr.replace(/\s/g, ""));
+    if (isNaN(newAmt) || newAmt <= 0) {
+      setAdjustError("Saisissez un montant valide supérieur à 0");
+      return;
+    }
+    setIsAdjusting(true);
+    setAdjustError(null);
+    try {
+      const res = await adjustPlannedExpenseAmountAction(adjustingItem.id, newAmt);
+      if (res.success) {
+        onShowToast("Montant ajusté avec succès");
+        setAdjustingItem(null);
+        await loadData();
+      } else {
+        setAdjustError(res.message || "Erreur lors de l'ajustement.");
+      }
+    } finally {
+      setIsAdjusting(false);
     }
   };
 
@@ -267,12 +302,20 @@ export function PlannedExpensesView({
                     </div>
                   </div>
 
-                  {/* Badge de statut */}
-                  <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${statusCfg.className}`}
-                  >
-                    {statusCfg.label}
-                  </span>
+                  {/* Badges : Récurrent + Statut */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {p.isRecurring && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary flex items-center gap-1">
+                        <RefreshCw className="w-2.5 h-2.5" />
+                        <span>Récurrent</span>
+                      </span>
+                    )}
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${statusCfg.className}`}
+                    >
+                      {statusCfg.label}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Barre de progression individuelle */}
@@ -311,7 +354,7 @@ export function PlannedExpensesView({
                   </div>
                 </div>
 
-                {/* Actions : Régler, Modifier, Supprimer */}
+                {/* Actions : Régler, Ajuster, Modifier, Supprimer */}
                 <div className="flex items-center justify-between pt-1 border-t border-line/60">
                   {!isSettled ? (
                     <button
@@ -329,6 +372,21 @@ export function PlannedExpensesView({
                   )}
 
                   <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAdjustingItem(p);
+                        setAdjustedAmountStr(String(p.amount));
+                        setAdjustError(null);
+                      }}
+                      title="Ajuster le montant de cette période"
+                      aria-label="Ajuster le montant de cette période"
+                      className="py-1 px-2 rounded-lg text-muted hover:text-foreground hover:bg-card-secondary text-[11px] font-semibold flex items-center gap-1 touch-target transition-colors"
+                    >
+                      <SlidersHorizontal className="w-3 h-3 text-primary" />
+                      <span>Ajuster</span>
+                    </button>
+
                     <button
                       type="button"
                       onClick={() => {
@@ -432,6 +490,84 @@ export function PlannedExpensesView({
                 Annuler
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 8. Modal Ajustement de Montant (Story D5) */}
+      {adjustingItem && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="adjust-amount-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn"
+        >
+          <div className="w-full max-w-xs bg-background border border-line rounded-3xl p-5 shadow-2xl space-y-4 animate-slideUp">
+            <div className="flex items-center justify-between pb-1 border-b border-line">
+              <div className="flex items-center gap-2">
+                <SlidersHorizontal className="w-4 h-4 text-primary" />
+                <h3 id="adjust-amount-title" className="text-sm font-extrabold text-foreground">
+                  Ajuster le montant
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAdjustingItem(null)}
+                aria-label="Fermer"
+                className="w-7 h-7 rounded-full bg-card border border-line flex items-center justify-center text-muted hover:text-foreground touch-target"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {adjustError && (
+              <div role="alert" className="p-2.5 rounded-xl bg-danger/10 text-danger text-xs font-semibold text-center">
+                {adjustError}
+              </div>
+            )}
+
+            <form onSubmit={handleAdjustConfirm} className="space-y-4">
+              <div>
+                <div className="text-xs font-semibold text-muted mb-1">
+                  Dépense : <strong className="text-foreground">{adjustingItem.name}</strong>
+                </div>
+                <div className="text-[11px] text-muted mb-2 leading-tight">
+                  Ajustez le montant prévu pour ce mois ou la reconduction suivante, sans modifier vos règlements passés.
+                </div>
+                <label htmlFor="adjustAmt" className="block text-xs font-semibold text-muted mb-1">
+                  Nouveau montant prévu ({currency}) *
+                </label>
+                <input
+                  id="adjustAmt"
+                  type="number"
+                  inputMode="numeric"
+                  required
+                  min="1"
+                  value={adjustedAmountStr}
+                  onChange={(e) => setAdjustedAmountStr(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-line bg-card text-foreground text-xs outline-none focus:border-primary transition-colors touch-target tabular-nums font-bold"
+                />
+              </div>
+
+              <div className="space-y-2 pt-1 border-t border-line">
+                <button
+                  type="submit"
+                  disabled={isAdjusting}
+                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-primary to-primary-dark text-white text-xs font-bold shadow-md shadow-primary/20 flex items-center justify-center gap-2 hover:opacity-95 touch-target transition-all disabled:opacity-50"
+                >
+                  {isAdjusting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Valider l'ajustement"}
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isAdjusting}
+                  onClick={() => setAdjustingItem(null)}
+                  className="w-full py-2.5 px-4 rounded-xl bg-card border border-line text-foreground text-xs font-bold hover:bg-card-secondary touch-target transition-colors"
+                >
+                  Annuler
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

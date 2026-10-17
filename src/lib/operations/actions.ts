@@ -20,6 +20,7 @@ import {
   getCurrentSemesterRange,
   getCurrentYearRange,
   shiftDate,
+  generateLocalId,
 } from "@/lib/utils/date";
 import {
   calculateBalance,
@@ -593,6 +594,7 @@ export interface PlannedExpenseWithProgress {
   category: string;
   period: "day" | "week" | "month";
   startDate: string;
+  isRecurring: boolean;
   spent: number;
   left: number;
   status: PlannedExpenseStatus;
@@ -607,7 +609,7 @@ export interface PlannedExpensesSummary {
 }
 
 /**
- * Création d'une dépense prévue (Story D3).
+ * Création d'une dépense prévue (Story D3 & D5).
  */
 export async function createPlannedExpenseAction(
   input: PlannedExpenseInput
@@ -638,6 +640,7 @@ export async function createPlannedExpenseAction(
       category: parsed.data.category,
       period: parsed.data.period,
       start_date: parsed.data.startDate,
+      is_recurring: parsed.data.isRecurring ?? false,
       local_id: parsed.data.localId,
       sync_status: "synced",
     })
@@ -652,7 +655,7 @@ export async function createPlannedExpenseAction(
 }
 
 /**
- * Mise à jour d'une dépense prévue existante (Story D3).
+ * Mise à jour d'une dépense prévue existante (Story D3 & D5).
  */
 export async function updatePlannedExpenseAction(
   id: string,
@@ -676,6 +679,7 @@ export async function updatePlannedExpenseAction(
   if (input.category) updatePayload.category = input.category;
   if (input.period) updatePayload.period = input.period;
   if (input.startDate) updatePayload.start_date = input.startDate;
+  if (input.isRecurring !== undefined) updatePayload.is_recurring = input.isRecurring;
 
   const { error } = await supabase
     .from("planned_expenses")
@@ -688,6 +692,46 @@ export async function updatePlannedExpenseAction(
   }
 
   return { success: true };
+}
+
+/**
+ * Ajuste le montant d'une dépense prévue en début ou en fin de période (Story D5).
+ * Permet de modifier le budget sans altérer l'historique des règlements passés.
+ */
+export async function adjustPlannedExpenseAmountAction(
+  id: string,
+  newAmount: number
+): Promise<OperationResult> {
+  if (
+    typeof newAmount !== "number" ||
+    isNaN(newAmount) ||
+    newAmount <= 0 ||
+    !Number.isInteger(newAmount)
+  ) {
+    return { success: false, message: "Le montant ajusté doit être un entier positif." };
+  }
+
+  const supabase = await createServerSideClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    if (await isDemoSession()) {
+      try {
+        const cookieStore = await cookies();
+        cookieStore.set(`asoro_demo_pe_${id}_amount`, String(newAmount), {
+          path: "/",
+          httpOnly: true,
+          sameSite: "lax",
+        });
+      } catch {}
+      return { success: true };
+    }
+    return { success: false, message: content.auth.errors.invalidCredentials };
+  }
+
+  return updatePlannedExpenseAction(id, { amount: newAmount });
 }
 
 /**
@@ -718,7 +762,8 @@ export async function deletePlannedExpenseAction(id: string): Promise<OperationR
 }
 
 /**
- * Récupération des dépenses prévues avec calcul de progression et statut (Stories D2 & D3).
+ * Récupération des dépenses prévues avec calcul de progression et statut (Stories D2, D3 & D5).
+ * Intègre la reconduction automatique des dépenses récurrentes au début de chaque période.
  */
 export async function getPlannedExpensesWithProgressAction(): Promise<
   OperationResult<PlannedExpensesSummary>
@@ -730,7 +775,21 @@ export async function getPlannedExpensesWithProgressAction(): Promise<
 
   if (!user) {
     if (await isDemoSession()) {
-      return { success: true, data: getDemoPlannedExpenses(getTodayDateString("Africa/Porto-Novo")) };
+      const customAmounts: Record<string, number> = {};
+      try {
+        const cookieStore = await cookies();
+        for (const id of ["pe-1", "pe-2", "pe-3"]) {
+          const val = cookieStore.get(`asoro_demo_pe_${id}_amount`)?.value;
+          if (val) customAmounts[id] = Number(val);
+        }
+      } catch {}
+      return {
+        success: true,
+        data: getDemoPlannedExpenses(
+          getTodayDateString("Africa/Porto-Novo"),
+          customAmounts
+        ),
+      };
     }
     return { success: false, message: content.auth.errors.invalidCredentials };
   }
@@ -751,6 +810,41 @@ export async function getPlannedExpensesWithProgressAction(): Promise<
   const plannedRows = (plannedRes.data || []) as Database["public"]["Tables"]["planned_expenses"]["Row"][];
   const expenseRows = (expRes.data || []) as Array<{ amount: number; planned_expense_id: string | null }>;
 
+  // Reconduction automatique des dépenses récurrentes du mois précédent vers le mois en cours (Story D5)
+  const todayStr = getTodayDateString("Africa/Porto-Novo");
+  const currentMonthStart = getCurrentMonthRange(todayStr).start;
+  const recurringPast = plannedRows.filter(
+    (p) => p.is_recurring && p.start_date < currentMonthStart
+  );
+
+  for (const p of recurringPast) {
+    const alreadyExists = plannedRows.some(
+      (curr) =>
+        curr.name.trim().toLowerCase() === p.name.trim().toLowerCase() &&
+        curr.start_date >= currentMonthStart
+    );
+    if (!alreadyExists) {
+      const { data: newPlanned } = await supabase
+        .from("planned_expenses")
+        .insert({
+          user_id: user.id,
+          name: p.name,
+          amount: p.amount,
+          category: p.category,
+          period: p.period,
+          start_date: currentMonthStart,
+          is_recurring: true,
+          local_id: generateLocalId(),
+          sync_status: "synced",
+        })
+        .select()
+        .single();
+      if (newPlanned) {
+        plannedRows.unshift(newPlanned);
+      }
+    }
+  }
+
   const items: PlannedExpenseWithProgress[] = plannedRows.map((p) => {
     const spent = expenseRows
       .filter((e) => e.planned_expense_id === p.id)
@@ -768,6 +862,7 @@ export async function getPlannedExpensesWithProgressAction(): Promise<
       category: p.category,
       period: p.period,
       startDate: p.start_date,
+      isRecurring: p.is_recurring ?? false,
       spent,
       left,
       status,

@@ -90,6 +90,7 @@ export type Database = {
           category: string;
           period: PeriodType;
           start_date: string;
+          is_recurring: boolean;
           local_id: string;
           last_modified_at: string;
           sync_status: SyncStatus;
@@ -103,6 +104,7 @@ export type Database = {
           category: string;
           period: PeriodType;
           start_date: string;
+          is_recurring?: boolean;
           local_id: string;
           last_modified_at?: string;
           sync_status?: SyncStatus;
@@ -116,6 +118,7 @@ export type Database = {
           category?: string;
           period?: PeriodType;
           start_date?: string;
+          is_recurring?: boolean;
           local_id?: string;
           last_modified_at?: string;
           sync_status?: SyncStatus;
