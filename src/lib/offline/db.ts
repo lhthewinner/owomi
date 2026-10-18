@@ -36,12 +36,12 @@ export interface CachedItem {
   updatedAt: string;
 }
 
-export class AsoroDatabase extends Dexie {
+export class OwomiDatabase extends Dexie {
   pendingOperations!: EntityTable<PendingOperation, "localId">;
   cachedItems!: EntityTable<CachedItem, "key">;
 
   constructor() {
-    super("asoro-offline-db");
+    super("owomi-offline-db");
 
     this.version(1).stores({
       pendingOperations: "localId, userId, type, createdAt, status",
@@ -51,4 +51,4 @@ export class AsoroDatabase extends Dexie {
 }
 
 // Instance singleton utilisable dans le navigateur
-export const db = new AsoroDatabase();
+export const db = new OwomiDatabase();

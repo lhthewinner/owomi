@@ -6,7 +6,7 @@
 
 export const content = {
   app: {
-    name: "Asoro",
+    name: "Owomi",
     baseline: "Sache où part ton argent, chaque jour.",
     description:
       "Note chaque achat en 5 secondes. En fin de journée ou de semaine, vois ce que tu as dépensé, gagné en plus de ton salaire, et ce qu'il te reste.",
@@ -170,7 +170,6 @@ export const content = {
     midnightFrozenLabel: "Bilan figé à minuit",
     logoutBtn: "Se déconnecter",
     deleteAccountBtn: "Supprimer mon compte et mes données",
-    v1Note: "Maquette V1 — assistant IA de saisie (texte et voix) prévu en V2.",
     currencyUpdatedToast: "Devise mise à jour avec succès.",
     currencies: {
       fcfa: "FCFA — Franc CFA",

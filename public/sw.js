@@ -1,10 +1,10 @@
 /**
- * Service Worker pour Asoro PWA.
+ * Service Worker pour Owomi PWA.
  * Conforme à la Story O1 & O2 :
  * « L'application s'ouvre sans internet une fois installée »
  */
 
-const CACHE_NAME = "asoro-static-v1";
+const CACHE_NAME = "owomi-static-v1";
 
 const PRECACHE_ASSETS = [
   "/",

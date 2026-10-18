@@ -35,3 +35,18 @@ DROP POLICY IF EXISTS "Les administrateurs peuvent modérer les profils" ON publ
 CREATE POLICY "Les administrateurs peuvent modérer les profils"
   ON public.profiles FOR UPDATE
   USING (auth.uid() = id OR public.is_admin());
+
+-- 6. Mise à jour de la fonction de création automatique de profil pour renseigner l'email
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, name, firstname, email)
+  VALUES (
+    NEW.id,
+    COALESCE(NEW.raw_user_meta_data->>'name', ''),
+    COALESCE(NEW.raw_user_meta_data->>'firstname', ''),
+    COALESCE(NEW.email, '')
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

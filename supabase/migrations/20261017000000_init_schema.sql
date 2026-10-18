@@ -89,6 +89,13 @@ create index if not exists idx_expenses_planned on public.expenses(planned_expen
 create index if not exists idx_incomes_user_date on public.incomes(user_id, date);
 create index if not exists idx_loans_user_date on public.loans(user_id, date);
 create index if not exists idx_planned_expenses_user on public.planned_expenses(user_id, start_date);
+create index if not exists idx_categories_user on public.categories(user_id);
+
+-- Index d'idempotence et d'intégrité pour la synchronisation hors ligne (anti-doublons)
+create unique index if not exists idx_expenses_user_local_id on public.expenses(user_id, local_id);
+create unique index if not exists idx_incomes_user_local_id on public.incomes(user_id, local_id);
+create unique index if not exists idx_loans_user_local_id on public.loans(user_id, local_id);
+create unique index if not exists idx_planned_expenses_user_local_id on public.planned_expenses(user_id, local_id);
 
 -- ==============================================================================
 -- ROW LEVEL SECURITY (RLS) - Activation obligatoire sur toutes les tables

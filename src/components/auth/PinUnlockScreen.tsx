@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Wallet, Delete, Lock, AlertCircle } from "lucide-react";
 import { verifyPin } from "@/lib/auth/pin";
 import { formatAmount } from "@/lib/utils/currency";
+import { content } from "@/content/fr";
 
 interface PinUnlockScreenProps {
   userId: string;
@@ -72,7 +73,7 @@ export function PinUnlockScreen({
           <Lock className="w-7 h-7 text-white" aria-hidden="true" />
         </div>
         <h1 className="text-xl font-extrabold text-foreground tracking-tight text-center">
-          Déverrouiller Asoro
+          Déverrouiller {content.app.name}
         </h1>
         <p className="text-xs text-muted mt-1 text-center">
           Content de vous revoir, <span className="font-semibold text-foreground">{userName}</span>

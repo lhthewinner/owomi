@@ -329,7 +329,7 @@ export function ProfileView({
         </div>
       </div>
 
-      {/* 4. Actions de session & Note */}
+      {/* 4. Actions de session */}
       <div className="space-y-3 pt-2">
         <button
           type="button"
@@ -348,10 +348,6 @@ export function ProfileView({
           <Trash2 className="w-3.5 h-3.5" />
           <span>{content.profile.deleteAccountBtn}</span>
         </button>
-
-        <p className="text-[11.5px] text-muted text-center pt-2">
-          {content.profile.v1Note}
-        </p>
       </div>
 
       {/* Modal de réglages du Code PIN */}

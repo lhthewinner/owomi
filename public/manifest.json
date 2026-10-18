@@ -1,6 +1,6 @@
 {
-  "name": "Asoro — Gestion de budget personnel",
-  "short_name": "Asoro",
+  "name": "Owomi — Gestion de budget personnel",
+  "short_name": "Owomi",
   "description": "Note chaque achat en 5 secondes. Vois ce que tu as dépensé, gagné et ce qu'il te reste, même hors ligne.",
   "start_url": "/",
   "display": "standalone",

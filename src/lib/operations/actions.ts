@@ -1187,6 +1187,7 @@ export async function getHistoryOperationsAction(
           .select("*")
           .eq("user_id", user.id)
           .order("date", { ascending: false })
+          .limit(100)
       : Promise.resolve({ data: [] }),
     fetchIncomes
       ? supabase
@@ -1194,6 +1195,7 @@ export async function getHistoryOperationsAction(
           .select("*")
           .eq("user_id", user.id)
           .order("date", { ascending: false })
+          .limit(100)
       : Promise.resolve({ data: [] }),
     fetchLoans
       ? supabase
@@ -1201,6 +1203,7 @@ export async function getHistoryOperationsAction(
           .select("*")
           .eq("user_id", user.id)
           .order("date", { ascending: false })
+          .limit(100)
       : Promise.resolve({ data: [] }),
   ]);
 

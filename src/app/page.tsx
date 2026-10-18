@@ -48,7 +48,7 @@ export default function HomePage() {
 
   useEffect(() => {
     // Initialisation du thème (clair / sombre)
-    const savedTheme = localStorage.getItem("asoro-theme");
+    const savedTheme = localStorage.getItem("owomi-theme") || localStorage.getItem("asoro-theme");
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     const initialDark = savedTheme === "dark" || (!savedTheme && prefersDark);
     setIsDark(initialDark);
@@ -223,7 +223,7 @@ export default function HomePage() {
     const nextTheme = !isDark;
     setIsDark(nextTheme);
     document.documentElement.setAttribute("data-theme", nextTheme ? "dark" : "light");
-    localStorage.setItem("asoro-theme", nextTheme ? "dark" : "light");
+    localStorage.setItem("owomi-theme", nextTheme ? "dark" : "light");
   };
 
   const handleLogout = async () => {
