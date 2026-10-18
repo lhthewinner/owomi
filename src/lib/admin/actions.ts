@@ -88,58 +88,62 @@ const BASE_DEMO_USERS: AdminUserItem[] = [
  * Règle de sécurité : aucun montant financier personnel n'est exposé.
  */
 export async function getAdminDataAction(): Promise<AdminActionResult<AdminDataResponse>> {
-  const cookieStore = await cookies();
-  const isDemo = cookieStore.get("asoro_demo")?.value === "true";
-
-  if (isDemo) {
-    const demoRole = cookieStore.get("asoro_demo_role")?.value;
-    if (demoRole === "user") {
-      return {
-        success: false,
-        message: "Accès refusé : vous devez posséder le rôle administrateur.",
-      };
-    }
-
-    // Mode démo : récupération des statuts modifiés localement
-    let customStatuses: Record<string, UserStatus> = {};
-    try {
-      const raw = cookieStore.get("asoro_demo_user_statuses")?.value;
-      if (raw) {
-        customStatuses = JSON.parse(raw);
-      }
-    } catch {}
-
-    const users = BASE_DEMO_USERS.map((u) => ({
-      ...u,
-      status: customStatuses[u.id] || u.status,
-    }));
-
-    const activeUsers = users.filter((u) => u.status === "active").length;
-    const suspendedUsers = users.filter((u) => u.status === "suspended").length;
-    const bannedUsers = users.filter((u) => u.status === "banned").length;
-
-    return {
-      success: true,
-      data: {
-        isAdmin: true,
-        users,
-        stats: {
-          totalUsers: users.length,
-          activeUsers,
-          suspendedUsers,
-          bannedUsers,
-          totalOperations: 48,
-        },
-      },
-    };
-  }
-
-  // Mode Supabase réel
   const supabase = await createServerSideClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Mode démo : UNIQUEMENT en développement local ET seulement si aucun utilisateur réel n'est connecté
+  const isLocalDev = process.env.NODE_ENV !== "production";
+  if (!user && isLocalDev) {
+    const cookieStore = await cookies();
+    const isDemo = cookieStore.get("asoro_demo")?.value === "true";
+
+    if (isDemo) {
+      const demoRole = cookieStore.get("asoro_demo_role")?.value;
+      if (demoRole === "user") {
+        return {
+          success: false,
+          message: "Accès refusé : vous devez posséder le rôle administrateur.",
+        };
+      }
+
+      // Mode démo : récupération des statuts modifiés localement
+      let customStatuses: Record<string, UserStatus> = {};
+      try {
+        const raw = cookieStore.get("asoro_demo_user_statuses")?.value;
+        if (raw) {
+          customStatuses = JSON.parse(raw);
+        }
+      } catch {}
+
+      const users = BASE_DEMO_USERS.map((u) => ({
+        ...u,
+        status: customStatuses[u.id] || u.status,
+      }));
+
+      const activeUsers = users.filter((u) => u.status === "active").length;
+      const suspendedUsers = users.filter((u) => u.status === "suspended").length;
+      const bannedUsers = users.filter((u) => u.status === "banned").length;
+
+      return {
+        success: true,
+        data: {
+          isAdmin: true,
+          users,
+          stats: {
+            totalUsers: users.length,
+            activeUsers,
+            suspendedUsers,
+            bannedUsers,
+            totalOperations: 48,
+          },
+        },
+      };
+    }
+  }
+
+  // Mode Supabase réel (Production ou utilisateur connecté)
   if (!user) {
     return { success: false, message: "Vous devez être connecté pour accéder à cette section." };
   }
@@ -165,14 +169,14 @@ export async function getAdminDataAction(): Promise<AdminActionResult<AdminDataR
     };
   }
 
-  // Récupération de tous les profils (autorisé par la policy RLS is_admin())
+  // Récupération de tous les profils réels (autorisé par la policy RLS is_admin())
   const { data: profileRows, error: rowsErr } = await supabase
     .from("profiles")
     .select("id, name, firstname, email, role, status, created_at")
     .order("created_at", { ascending: false });
 
   if (rowsErr) {
-    return { success: false, message: "Erreur lors du chargement des utilisateurs." };
+    return { success: false, message: "Erreur lors du chargement des utilisateurs réels." };
   }
 
   const rows = (profileRows || []) as Database["public"]["Tables"]["profiles"]["Row"][];
@@ -186,7 +190,7 @@ export async function getAdminDataAction(): Promise<AdminActionResult<AdminDataR
     createdAt: row.created_at ? row.created_at.split("T")[0] : "",
   }));
 
-  // Statistiques anonymes globales (comptage de lignes uniquement, aucun montant !)
+  // Statistiques anonymes globales réelles (comptage de lignes uniquement, aucun montant !)
   const [expCountRes, incCountRes, loanCountRes] = await Promise.all([
     supabase.from("expenses").select("id", { count: "exact", head: true }),
     supabase.from("incomes").select("id", { count: "exact", head: true }),
@@ -216,112 +220,121 @@ export async function getAdminDataAction(): Promise<AdminActionResult<AdminDataR
   };
 }
 
-/**
- * Modération d'un compte utilisateur (Story AD1).
- * Permet de passer un compte à actif, suspendu ou banni.
- */
 export async function updateUserStatusAction(
   targetUserId: string,
   newStatus: UserStatus
 ): Promise<AdminActionResult> {
-  if (!["active", "suspended", "banned"].includes(newStatus)) {
-    return { success: false, message: "Statut de modération invalide." };
-  }
-
-  const cookieStore = await cookies();
-  const isDemo = cookieStore.get("asoro_demo")?.value === "true";
-
-  if (isDemo) {
-    const demoRole = cookieStore.get("asoro_demo_role")?.value;
-    if (demoRole === "user") {
-      return { success: false, message: "Action refusée : réservée aux administrateurs." };
-    }
-
-    if (targetUserId === "usr-admin-1") {
-      return { success: false, message: "Impossible de modifier le compte de l'administrateur principal." };
-    }
-
-    let customStatuses: Record<string, UserStatus> = {};
-    try {
-      const raw = cookieStore.get("asoro_demo_user_statuses")?.value;
-      if (raw) customStatuses = JSON.parse(raw);
-    } catch {}
-
-    customStatuses[targetUserId] = newStatus;
-    cookieStore.set("asoro_demo_user_statuses", JSON.stringify(customStatuses), {
-      path: "/",
-      maxAge: 3600 * 24,
-    });
-
-    return {
-      success: true,
-      message: `Statut utilisateur mis à jour (${newStatus}).`,
-    };
-  }
-
   const supabase = await createServerSideClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return { success: false, message: "Non authentifié." };
+  if (user) {
+    // Vérification de sécurité : l'appelant est-il admin ?
+    const { data: callerProfile } = await supabase
+      .from("profiles")
+      .select("role, status")
+      .eq("id", user.id)
+      .single();
+
+    if (!callerProfile || callerProfile.role !== "admin" || callerProfile.status !== "active") {
+      return { success: false, message: "Action réservée aux administrateurs actifs." };
+    }
+
+    if (targetUserId === user.id) {
+      return { success: false, message: "Vous ne pouvez pas modifier le statut de votre propre compte." };
+    }
+
+    // Protection anti-exclusion pour les autres administrateurs
+    const { data: targetProfile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", targetUserId)
+      .single();
+
+    if (targetProfile?.role === "admin") {
+      return { success: false, message: "Impossible de modifier le compte d'un administrateur." };
+    }
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ status: newStatus })
+      .eq("id", targetUserId);
+
+    if (error) {
+      return { success: false, message: "Erreur lors de la mise à jour du statut." };
+    }
+
+    return { success: true, message: `Statut utilisateur mis à jour avec succès (${newStatus}).` };
   }
 
-  // Vérification de sécurité : l'appelant est-il admin ?
-  const { data: callerProfile } = await supabase
-    .from("profiles")
-    .select("role, status")
-    .eq("id", user.id)
-    .single();
+  // Mode démo (développement local uniquement)
+  if (process.env.NODE_ENV !== "production") {
+    const cookieStore = await cookies();
+    const isDemo = cookieStore.get("asoro_demo")?.value === "true";
 
-  if (!callerProfile || callerProfile.role !== "admin" || callerProfile.status !== "active") {
-    return { success: false, message: "Action réservée aux administrateurs actifs." };
+    if (isDemo) {
+      const demoRole = cookieStore.get("asoro_demo_role")?.value;
+      if (demoRole === "user") {
+        return { success: false, message: "Action refusée : réservée aux administrateurs." };
+      }
+
+      if (targetUserId === "usr-admin-1") {
+        return { success: false, message: "Impossible de modifier le compte de l'administrateur principal." };
+      }
+
+      let customStatuses: Record<string, UserStatus> = {};
+      try {
+        const raw = cookieStore.get("asoro_demo_user_statuses")?.value;
+        if (raw) customStatuses = JSON.parse(raw);
+      } catch {}
+
+      customStatuses[targetUserId] = newStatus;
+      cookieStore.set("asoro_demo_user_statuses", JSON.stringify(customStatuses), {
+        path: "/",
+        maxAge: 3600 * 24,
+      });
+
+      return {
+        success: true,
+        message: `Statut utilisateur mis à jour (${newStatus}).`,
+      };
+    }
   }
 
-  // Protection anti auto-exclusion : un admin ne peut pas suspendre ou bannir son propre compte
-  if (targetUserId === user.id) {
-    return { success: false, message: "Vous ne pouvez pas modifier le statut de votre propre compte." };
-  }
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({ status: newStatus })
-    .eq("id", targetUserId);
-
-  if (error) {
-    return { success: false, message: "Erreur lors de la mise à jour du statut." };
-  }
-
-  return { success: true, message: `Statut utilisateur mis à jour avec succès (${newStatus}).` };
+  return { success: false, message: "Non authentifié." };
 }
 
 /**
  * Vérifie rapidement si l'utilisateur courant est administrateur (pour l'affichage du badge/lien dans le Profil).
  */
 export async function checkIsAdminAction(): Promise<boolean> {
-  const cookieStore = await cookies();
-  const isDemo = cookieStore.get("asoro_demo")?.value === "true";
-
-  if (isDemo) {
-    const demoRole = cookieStore.get("asoro_demo_role")?.value;
-    return demoRole !== "user";
-  }
-
   const supabase = await createServerSideClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return false;
+  if (user) {
+    const { data } = await supabase
+      .from("profiles")
+      .select("role, status")
+      .eq("id", user.id)
+      .single();
 
-  const { data } = await supabase
-    .from("profiles")
-    .select("role, status")
-    .eq("id", user.id)
-    .single();
+    return data?.role === "admin" && data?.status === "active";
+  }
 
-  return data?.role === "admin" && data?.status === "active";
+  // Hors production, sans utilisateur connecté : support du rôle de test démo
+  if (process.env.NODE_ENV !== "production") {
+    const cookieStore = await cookies();
+    const isDemo = cookieStore.get("asoro_demo")?.value === "true";
+    if (isDemo) {
+      const demoRole = cookieStore.get("asoro_demo_role")?.value;
+      return demoRole !== "user";
+    }
+  }
+
+  return false;
 }
 
 /**
