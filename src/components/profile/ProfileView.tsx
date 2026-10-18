@@ -50,7 +50,15 @@ export function ProfileView({
   onCurrencyChange,
   initialShowAdmin = false,
 }: ProfileViewProps) {
-  const [currency, setCurrency] = useState<string>("FCFA");
+  const [currency, setCurrency] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem("owomi_user_currency");
+        if (cached) return cached;
+      } catch {}
+    }
+    return "FCFA";
+  });
   const [isMidnightFrozen, setIsMidnightFrozen] = useState<boolean>(true);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
   const [isUpdatingCurrency, setIsUpdatingCurrency] = useState<boolean>(false);
@@ -65,15 +73,22 @@ export function ProfileView({
 
   useEffect(() => {
     async function loadPrefs() {
-      const res = await getProfilePreferencesAction();
+      const [res, adminOk] = await Promise.all([
+        getProfilePreferencesAction(),
+        checkIsAdminAction(),
+      ]);
       if (res.success && res.data) {
-        const cur = res.data.currency;
-        if (cur === "€") setCurrency("EUR");
-        else if (cur === "$") setCurrency("USD");
-        else if (cur === "₦" || cur.toUpperCase() === "NAIRA") setCurrency("NGN");
-        else setCurrency(cur);
+        let cur = res.data.currency;
+        if (cur === "€") cur = "EUR";
+        else if (cur === "$") cur = "USD";
+        else if (cur === "₦" || cur.toUpperCase() === "NAIRA") cur = "NGN";
+        setCurrency(cur);
+        if (typeof window !== "undefined") {
+          try {
+            sessionStorage.setItem("owomi_user_currency", cur);
+          } catch {}
+        }
       }
-      const adminOk = await checkIsAdminAction();
       setIsAdmin(adminOk);
     }
     loadPrefs();
@@ -85,6 +100,11 @@ export function ProfileView({
       const res = await updateCurrencyAction(newCur);
       if (res.success) {
         setCurrency(newCur);
+        if (typeof window !== "undefined") {
+          try {
+            sessionStorage.setItem("owomi_user_currency", newCur);
+          } catch {}
+        }
         onShowToast?.(content.profile.currencyUpdatedToast);
         onCurrencyChange?.();
       }

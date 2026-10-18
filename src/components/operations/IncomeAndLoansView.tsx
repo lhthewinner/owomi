@@ -37,18 +37,48 @@ export function IncomeAndLoansView({
   onOpenAddLoan,
   onShowToast,
 }: IncomeAndLoansViewProps) {
-  const [salary, setSalary] = useState<number>(0);
-  const [incomes, setIncomes] = useState<IncomeRow[]>([]);
-  const [loans, setLoans] = useState<LoanRow[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const cacheKey = "owomi_cache_income_loans";
+
+  const [salary, setSalary] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) return JSON.parse(cached).salary ?? 0;
+      } catch {}
+    }
+    return 0;
+  });
+  const [incomes, setIncomes] = useState<IncomeRow[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) return JSON.parse(cached).incomes ?? [];
+      } catch {}
+    }
+    return [];
+  });
+  const [loans, setLoans] = useState<LoanRow[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) return JSON.parse(cached).loans ?? [];
+      } catch {}
+    }
+    return [];
+  });
+  const [loading, setLoading] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return !sessionStorage.getItem(cacheKey);
+    }
+    return true;
+  });
 
   // Édition du salaire
   const [isEditingSalary, setIsEditingSalary] = useState<boolean>(false);
-  const [salaryInput, setSalaryInput] = useState<string>("");
+  const [salaryInput, setSalaryInput] = useState<string>(() => (salary ? String(salary) : ""));
   const [salaryLoading, setSalaryLoading] = useState<boolean>(false);
 
   const loadData = async () => {
-    setLoading(true);
     try {
       const res = await getIncomesAndLoansDataAction();
       if (res.success && res.data) {
@@ -56,6 +86,11 @@ export function IncomeAndLoansView({
         setSalaryInput(String(res.data.salary));
         setIncomes(res.data.incomes);
         setLoans(res.data.loans);
+        if (typeof window !== "undefined") {
+          try {
+            sessionStorage.setItem(cacheKey, JSON.stringify(res.data));
+          } catch {}
+        }
       }
     } catch {
       // Ignoré
@@ -81,6 +116,16 @@ export function IncomeAndLoansView({
       if (res.success) {
         setSalary(newSalary);
         setIsEditingSalary(false);
+        if (typeof window !== "undefined") {
+          try {
+            const cached = sessionStorage.getItem(cacheKey);
+            if (cached) {
+              const parsed = JSON.parse(cached);
+              parsed.salary = newSalary;
+              sessionStorage.setItem(cacheKey, JSON.stringify(parsed));
+            }
+          } catch {}
+        }
         onShowToast("Salaire mensuel mis à jour");
       }
     } finally {
@@ -130,6 +175,11 @@ export function IncomeAndLoansView({
         }
       }
     } finally {
+      if (typeof window !== "undefined") {
+        try {
+          sessionStorage.removeItem(cacheKey);
+        } catch {}
+      }
       setIsDeleting(false);
     }
   };

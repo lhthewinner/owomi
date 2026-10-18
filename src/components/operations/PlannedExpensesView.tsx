@@ -65,8 +65,23 @@ export function PlannedExpensesView({
   onShowToast,
   refreshTrigger = 0,
 }: PlannedExpensesViewProps) {
-  const [data, setData] = useState<PlannedExpensesSummary | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const cacheKey = "owomi_cache_planned";
+
+  const [data, setData] = useState<PlannedExpensesSummary | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return null;
+  });
+  const [loading, setLoading] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return !sessionStorage.getItem(cacheKey);
+    }
+    return true;
+  });
   const [filterPeriod, setFilterPeriod] = useState<"all" | "day" | "week" | "month">("all");
 
   // Modal création / modification
@@ -84,16 +99,24 @@ export function PlannedExpensesView({
   const [adjustError, setAdjustError] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
-    setLoading(true);
+    setData((prev) => {
+      if (!prev) setLoading(true);
+      return prev;
+    });
     try {
       const res = await getPlannedExpensesWithProgressAction();
       if (res.success && res.data) {
         setData(res.data);
+        if (typeof window !== "undefined") {
+          try {
+            sessionStorage.setItem(cacheKey, JSON.stringify(res.data));
+          } catch {}
+        }
       }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [cacheKey]);
 
   useEffect(() => {
     loadData();

@@ -26,19 +26,60 @@ export function HistoryView({
   refreshTrigger = 0,
 }: HistoryViewProps) {
   const [filter, setFilter] = useState<HistoryFilter>("all");
-  const [operations, setOperations] = useState<RecentOperation[]>([]);
-  const [currency, setCurrency] = useState<string>("FCFA");
-  const [loading, setLoading] = useState<boolean>(true);
+  const cacheKey = `owomi_cache_hist_${filter}`;
+
+  const [operations, setOperations] = useState<RecentOperation[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem("owomi_cache_hist_all");
+        if (cached) return JSON.parse(cached).operations ?? [];
+      } catch {}
+    }
+    return [];
+  });
+  const [currency, setCurrency] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem("owomi_cache_hist_all");
+        if (cached) return JSON.parse(cached).currency ?? "FCFA";
+      } catch {}
+    }
+    return "FCFA";
+  });
+  const [loading, setLoading] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return !sessionStorage.getItem("owomi_cache_hist_all");
+    }
+    return true;
+  });
   const [deletingOp, setDeletingOp] = useState<RecentOperation | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   const loadOperations = useCallback(async () => {
-    setLoading(true);
+    const currentKey = `owomi_cache_hist_${filter}`;
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem(currentKey);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          setOperations(parsed.operations ?? []);
+          setCurrency(parsed.currency ?? "FCFA");
+          setLoading(false);
+        } else {
+          setLoading(true);
+        }
+      } catch {}
+    }
     try {
       const res = await getHistoryOperationsAction(filter);
       if (res.success && res.data) {
         setOperations(res.data.operations);
         setCurrency(res.data.currency);
+        if (typeof window !== "undefined") {
+          try {
+            sessionStorage.setItem(currentKey, JSON.stringify(res.data));
+          } catch {}
+        }
       }
     } finally {
       setLoading(false);
@@ -74,6 +115,13 @@ export function HistoryView({
       }
 
       if (res.success) {
+        if (typeof window !== "undefined") {
+          try {
+            ["all", "expenses", "incomes", "loans"].forEach((k) =>
+              sessionStorage.removeItem(`owomi_cache_hist_${k}`)
+            );
+          } catch {}
+        }
         onShowToast(content.history.deletedToast);
         setDeletingOp(null);
         await loadOperations();

@@ -51,22 +51,46 @@ export function DashboardView({
   onShowToast,
   refreshTrigger = 0,
 }: DashboardViewProps) {
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const cacheKey = `owomi_cache_dash_${currentUser.id}`;
+
+  const [data, setData] = useState<DashboardData | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return null;
+  });
+  const [loading, setLoading] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return !sessionStorage.getItem(cacheKey);
+    }
+    return true;
+  });
   const [deletingOp, setDeletingOp] = useState<RecentOperation | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   const loadData = useCallback(async () => {
-    setLoading(true);
+    // Si aucune donnée n'est encore présente, on affiche le loader
+    setData((prev) => {
+      if (!prev) setLoading(true);
+      return prev;
+    });
     try {
       const res = await getDashboardDataAction();
       if (res.success && res.data) {
         setData(res.data);
+        if (typeof window !== "undefined") {
+          try {
+            sessionStorage.setItem(cacheKey, JSON.stringify(res.data));
+          } catch {}
+        }
       }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [cacheKey]);
 
   useEffect(() => {
     loadData();

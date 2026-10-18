@@ -148,15 +148,37 @@ export default function HomePage() {
       }
     }
 
+    // Restauration instantanée de la session locale pour éviter le clignotement de l'écran d'accueil
+    const cachedUserJson = localStorage.getItem("owomi_cached_user");
+    if (cachedUserJson) {
+      try {
+        const cachedUser = JSON.parse(cachedUserJson);
+        if (cachedUser && cachedUser.id) {
+          setCurrentUser(cachedUser);
+          setView("authenticated");
+          if (!hasPinConfigured(cachedUser.id)) {
+            setIsPinUnlocked(true);
+          }
+        }
+      } catch {
+        // En cas de parsing invalide, getSession prendra le relais
+      }
+    }
+
     // Vérification d'une session existante (persistance hors ligne via getSession)
     const supabase = createClient();
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
+        localStorage.setItem("owomi_cached_user", JSON.stringify(session.user));
         setCurrentUser(session.user);
         setView("authenticated");
         if (!hasPinConfigured(session.user.id)) {
           setIsPinUnlocked(true);
         }
+      } else {
+        localStorage.removeItem("owomi_cached_user");
+        setCurrentUser(null);
+        setView("welcome");
       }
     });
 
@@ -164,12 +186,17 @@ export default function HomePage() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
+        localStorage.setItem("owomi_cached_user", JSON.stringify(session.user));
         setCurrentUser(session.user);
         setView("authenticated");
         if (_event === "SIGNED_IN") {
           setIsPinUnlocked(true);
         }
       } else if (_event === "SIGNED_OUT") {
+        localStorage.removeItem("owomi_cached_user");
+        try {
+          sessionStorage.clear();
+        } catch {}
         setCurrentUser(null);
         setIsPinUnlocked(false);
       }
@@ -229,6 +256,10 @@ export default function HomePage() {
   const handleLogout = async () => {
     clearAllLocalPins();
     setIsPinUnlocked(false);
+    localStorage.removeItem("owomi_cached_user");
+    try {
+      sessionStorage.clear();
+    } catch {}
     await clearAllLocalData();
     if (typeof document !== "undefined") {
       document.cookie = "asoro_demo=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
@@ -243,6 +274,10 @@ export default function HomePage() {
   const handleDeletedAccount = async () => {
     clearAllLocalPins();
     setIsPinUnlocked(false);
+    localStorage.removeItem("owomi_cached_user");
+    try {
+      sessionStorage.clear();
+    } catch {}
     await clearAllLocalData();
     if (typeof document !== "undefined") {
       document.cookie = "asoro_demo=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
@@ -489,7 +524,14 @@ export default function HomePage() {
                   onLogout={handleLogout}
                   onDeletedAccount={handleDeletedAccount}
                   onShowToast={(msg) => setToastMessage(msg)}
-                  onCurrencyChange={() => setRefreshTrigger((t) => t + 1)}
+                  onCurrencyChange={() => {
+                    if (typeof window !== "undefined") {
+                      try {
+                        sessionStorage.clear();
+                      } catch {}
+                    }
+                    setRefreshTrigger((t) => t + 1);
+                  }}
                   initialShowAdmin={initialShowAdmin}
                 />
               )}
@@ -540,6 +582,11 @@ export default function HomePage() {
             setPayPlannedId(null);
           }}
           onSuccess={(msg) => {
+            if (typeof window !== "undefined") {
+              try {
+                sessionStorage.clear();
+              } catch {}
+            }
             setToastMessage(msg);
             setRefreshTrigger((t) => t + 1);
           }}

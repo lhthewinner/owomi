@@ -29,8 +29,23 @@ export function BalanceView({
 }: BalanceViewProps) {
   const [period, setPeriod] = useState<PeriodType>(initialPeriod);
   const [referenceDate, setReferenceDate] = useState<string>("");
-  const [data, setData] = useState<BalanceDataResponse | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [data, setData] = useState<BalanceDataResponse | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const today = getTodayDateString();
+        const cached = sessionStorage.getItem(`owomi_cache_bal_${initialPeriod}_${today}`);
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return null;
+  });
+  const [loading, setLoading] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      const today = getTodayDateString();
+      return !sessionStorage.getItem(`owomi_cache_bal_${initialPeriod}_${today}`);
+    }
+    return true;
+  });
   const [error, setError] = useState<string | null>(null);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState<boolean>(false);
 
@@ -43,12 +58,28 @@ export function BalanceView({
 
   const loadData = useCallback(async () => {
     if (!referenceDate) return;
-    setLoading(true);
+    const currentKey = `owomi_cache_bal_${period}_${referenceDate}`;
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem(currentKey);
+        if (cached) {
+          setData(JSON.parse(cached));
+          setLoading(false);
+        } else {
+          setLoading(true);
+        }
+      } catch {}
+    }
     setError(null);
     try {
       const res = await getBalanceDataAction(period, referenceDate);
       if (res.success && res.data) {
         setData(res.data);
+        if (typeof window !== "undefined") {
+          try {
+            sessionStorage.setItem(currentKey, JSON.stringify(res.data));
+          } catch {}
+        }
       } else {
         setError(res.message || content.common.errorTitle);
       }
