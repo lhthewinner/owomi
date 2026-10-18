@@ -39,7 +39,7 @@ const BASE_DEMO_USERS: AdminUserItem[] = [
     id: "usr-admin-1",
     name: "Admin",
     firstname: "Principal",
-    email: "admin@asoro.app",
+    email: "admin@owomi.app",
     role: "admin",
     status: "active",
     createdAt: "2026-10-01",

@@ -86,7 +86,7 @@ export async function signInAction(
   const isLocalEnv = process.env.NODE_ENV !== "production";
   if (
     isLocalEnv &&
-    email.toLowerCase().trim() === "test@asoro.app" &&
+    email.toLowerCase().trim() === "test@owomi.app" &&
     password === "Asoro2026!"
   ) {
     try {

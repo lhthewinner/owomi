@@ -81,7 +81,7 @@ export default function HomePage() {
       } else if (viewParam === "pin") {
         setCurrentUser({
           id: "demo-user-id",
-          email: "alex@asoro.app",
+          email: "alex@owomi.app",
           user_metadata: { name: "Alex" },
           app_metadata: {},
           aud: "authenticated",
@@ -100,7 +100,7 @@ export default function HomePage() {
         document.cookie = "asoro_demo=true; path=/";
         setCurrentUser({
           id: "demo-user-id",
-          email: "test@asoro.app",
+          email: "test@owomi.app",
           user_metadata: { name: "Testeur", firstname: "Alex" },
           app_metadata: {},
           aud: "authenticated",
@@ -368,7 +368,7 @@ export default function HomePage() {
                 if (!currentUser) {
                   setCurrentUser({
                     id: "demo-user-id",
-                    email: "test@asoro.app",
+                    email: "test@owomi.app",
                     user_metadata: { name: "Testeur", firstname: "Alex" },
                     app_metadata: {},
                     aud: "authenticated",

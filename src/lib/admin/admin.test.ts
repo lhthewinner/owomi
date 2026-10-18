@@ -7,7 +7,7 @@ describe("Logique d'administration et modération (Story AD1)", () => {
       id: "u-1",
       name: "Admin",
       firstname: "Super",
-      email: "admin@asoro.app",
+      email: "admin@owomi.app",
       role: "admin",
       status: "active",
       createdAt: "2026-10-01",
