@@ -212,13 +212,28 @@ export default function HomePage() {
     if (typeof window !== "undefined") {
       window.history.replaceState({ view, authTab, activeTab }, "");
     }
+  }, [view, authTab, activeTab]);
 
+  useEffect(() => {
     const handlePopState = (e: PopStateEvent) => {
       const state = e.state;
       if (!state) return;
-      if (state.view) setView(state.view);
-      if (state.authTab) setAuthTab(state.authTab);
-      if (state.activeTab) setActiveTab(state.activeTab);
+      const isUserConnected =
+        typeof window !== "undefined" && !!localStorage.getItem("owomi_cached_user");
+
+      if (isUserConnected) {
+        // Un utilisateur connecté reste toujours dans l'espace connecté
+        setView("authenticated");
+        if (state.activeTab) {
+          setActiveTab(state.activeTab);
+        } else {
+          setActiveTab("dashboard");
+        }
+      } else {
+        if (state.view) setView(state.view);
+        if (state.authTab) setAuthTab(state.authTab);
+        if (state.activeTab) setActiveTab(state.activeTab);
+      }
     };
 
     window.addEventListener("popstate", handlePopState);
@@ -515,11 +530,7 @@ export default function HomePage() {
                   isDark={isDark}
                   onToggleTheme={toggleTheme}
                   onBack={() => {
-                    if (typeof window !== "undefined" && window.history.length > 1) {
-                      window.history.back();
-                    } else {
-                      navigateToTab("dashboard");
-                    }
+                    navigateToTab("dashboard");
                   }}
                   onLogout={handleLogout}
                   onDeletedAccount={handleDeletedAccount}
