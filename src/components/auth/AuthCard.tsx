@@ -37,6 +37,8 @@ export function AuthCard({
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
+  const [isRegisteredWaitingEmail, setIsRegisteredWaitingEmail] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState("");
 
   const switchTab = (nextTab: "signup" | "login") => {
     setTab(nextTab);
@@ -75,11 +77,11 @@ export function AuthCard({
 
       if (!result.success) {
         setErrorMessage(result.message || content.auth.errors.invalidCredentials);
+      } else if (!result.needsEmailVerification) {
+        onSuccessLogin();
       } else {
-        setSuccessNotice(
-          result.message || content.auth.success.signupConfirmationSent
-        );
-        // Réinitialiser les champs sensibles
+        setRegisteredEmail(suEmail);
+        setIsRegisteredWaitingEmail(true);
         setSuPassword("");
       }
     } catch {
@@ -128,13 +130,48 @@ export function AuthCard({
     <div className="flex flex-col h-full animate-fadeIn">
       {/* Bouton retour */}
       <button
-        onClick={onBack}
+        onClick={() => {
+          if (isRegisteredWaitingEmail) {
+            setIsRegisteredWaitingEmail(false);
+          }
+          onBack();
+        }}
         aria-label={content.common.back}
         className="w-10 h-10 rounded-full bg-card shadow-sm border border-line flex items-center justify-center text-muted hover:text-foreground touch-target mb-4 transition-colors"
       >
         <ArrowLeft className="w-5 h-5" />
       </button>
 
+      {isRegisteredWaitingEmail ? (
+        <div className="flex flex-col items-center text-center py-6 px-2 my-auto animate-fadeIn">
+          <div className="w-16 h-16 rounded-2xl bg-gain/15 text-gain flex items-center justify-center mb-5 shadow-sm">
+            <MailCheck className="w-8 h-8 stroke-[2.5]" />
+          </div>
+
+          <h2 className="text-2xl font-extrabold text-foreground tracking-tight mb-3">
+            {content.auth.signupVerification.title}
+          </h2>
+
+          <p className="text-sm text-muted leading-relaxed max-w-sm mb-6">
+            Un email de confirmation vient d'être envoyé à{" "}
+            <strong className="text-foreground font-bold">{registeredEmail}</strong>.
+            <br />
+            Cliquez sur le lien reçu dans votre boîte de réception pour activer votre compte.
+          </p>
+
+          <button
+            type="button"
+            onClick={() => {
+              setIsRegisteredWaitingEmail(false);
+              switchTab("login");
+            }}
+            className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-primary to-primary-dark text-white font-bold text-[15px] shadow-lg shadow-primary/25 flex items-center justify-center gap-2 hover:opacity-95 touch-target transition-all"
+          >
+            {content.auth.signupVerification.goToLogin}
+          </button>
+        </div>
+      ) : (
+        <>
       {/* Titres */}
       <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight mb-5">
         {tab === "signup" ? content.auth.signupTitle : content.auth.loginTitle}
@@ -391,6 +428,8 @@ export function AuthCard({
             )}
           </button>
         </form>
+      )}
+        </>
       )}
     </div>
   );

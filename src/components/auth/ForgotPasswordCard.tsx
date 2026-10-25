@@ -29,7 +29,8 @@ export function ForgotPasswordCard({ onBack }: ForgotPasswordCardProps) {
 
     setLoading(true);
     try {
-      const result = await forgotPasswordAction({ email });
+      const origin = typeof window !== "undefined" ? window.location.origin : undefined;
+      const result = await forgotPasswordAction({ email }, origin);
       if (!result.success) {
         setErrorMessage(result.message || content.common.errorTitle);
       } else {

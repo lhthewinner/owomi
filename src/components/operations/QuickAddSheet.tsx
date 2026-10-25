@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import {
   Calendar,
   X,
+  Check,
   Loader2,
   Handshake,
   Coins,
@@ -11,9 +12,10 @@ import {
   ArrowUpRight,
   Delete,
   AlertTriangle,
+  ChevronDown,
 } from "lucide-react";
 import { formatAmount } from "@/lib/utils/currency";
-import { DEFAULT_CATEGORIES } from "@/lib/constants/categories";
+import { DEFAULT_CATEGORIES, getCategoryIcon } from "@/lib/constants/categories";
 import { getTodayDateString, generateLocalId } from "@/lib/utils/date";
 import { enqueueOfflineOperation } from "@/lib/offline/sync";
 import {
@@ -49,7 +51,8 @@ export function QuickAddSheet({
 }: QuickAddSheetProps) {
   const [mode, setMode] = useState<OperationMode>(initialMode);
   const [amountStr, setAmountStr] = useState<string>("");
-  const [selectedCat, setSelectedCat] = useState<string>("Alimentation");
+  const [selectedCat, setSelectedCat] = useState<string>("Aucune");
+  const SelectedCatIcon = getCategoryIcon(selectedCat);
   const [selectedPlannedId, setSelectedPlannedId] = useState<string | null>(initialPlannedExpenseId);
   const [plannedList, setPlannedList] = useState<Array<{ id: string; name: string; category: string; left: number }>>([]);
   const [loanDir, setLoanDir] = useState<"borrowed" | "given">("borrowed");
@@ -67,6 +70,7 @@ export function QuickAddSheet({
     if (isOpen) {
       setMode(initialMode);
       setSelectedPlannedId(initialPlannedExpenseId);
+      setSelectedCat("Aucune");
       setError(null);
 
       // Chargement des dépenses prévues actives
@@ -410,26 +414,26 @@ export function QuickAddSheet({
           {/* Mode Dépense : Chips Catégories et Sélection Dépense Prévue */}
           {mode === "exp" && (
             <div className="space-y-2">
-              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-                {DEFAULT_CATEGORIES.map((cat) => {
-                  const IconComponent = cat.icon;
-                  const isSelected = selectedCat === cat.name;
-                  return (
-                    <button
-                      key={cat.name}
-                      type="button"
-                      onClick={() => setSelectedCat(cat.name)}
-                      className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border touch-target ${
-                        isSelected
-                          ? "bg-primary/15 border-primary text-primary"
-                          : "bg-card border-line text-muted hover:text-foreground"
-                      }`}
-                    >
-                      <IconComponent className="w-3.5 h-3.5" />
-                      <span>{cat.name}</span>
-                    </button>
-                  );
-                })}
+              {/* Sélecteur de catégorie sur une seule ligne (Story D1) */}
+              <div className="relative">
+                <div className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-primary">
+                  <SelectedCatIcon className="w-4 h-4" />
+                </div>
+                <select
+                  aria-label="Catégorie de la dépense"
+                  value={selectedCat}
+                  onChange={(e) => setSelectedCat(e.target.value)}
+                  className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-line bg-card text-foreground text-xs font-semibold outline-none focus:border-primary transition-colors touch-target appearance-none cursor-pointer"
+                >
+                  {DEFAULT_CATEGORIES.map((cat) => (
+                    <option key={cat.name} value={cat.name}>
+                      {cat.name === "Aucune" ? "Aucune (par défaut)" : cat.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-3.5 flex items-center text-muted">
+                  <ChevronDown className="w-4 h-4" />
+                </div>
               </div>
 
               {/* Sélection Dépense Prévue (Story D2 & Règle Surplus) */}
@@ -443,6 +447,8 @@ export function QuickAddSheet({
                     if (id) {
                       const found = plannedList.find((p) => p.id === id);
                       if (found) setSelectedCat(found.category);
+                    } else {
+                      setSelectedCat("Aucune");
                     }
                   }}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-line bg-card text-foreground text-xs outline-none focus:border-primary transition-colors touch-target"

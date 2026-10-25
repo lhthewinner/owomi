@@ -3,6 +3,8 @@ import {
   passwordSchema,
   signupSchema,
   loginSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
   passwordRules,
 } from "./auth";
 
@@ -93,5 +95,15 @@ describe("Validation de l'inscription et de la connexion", () => {
       password: "",
     });
     expect(res.success).toBe(false);
+  });
+
+  it("valide la demande de réinitialisation de mot de passe oublié", () => {
+    expect(forgotPasswordSchema.safeParse({ email: "user@example.com" }).success).toBe(true);
+    expect(forgotPasswordSchema.safeParse({ email: "invalid-email" }).success).toBe(false);
+  });
+
+  it("valide la définition d'un nouveau mot de passe avec resetPasswordSchema", () => {
+    expect(resetPasswordSchema.safeParse({ password: "NewValid2026!" }).success).toBe(true);
+    expect(resetPasswordSchema.safeParse({ password: "court" }).success).toBe(false);
   });
 });

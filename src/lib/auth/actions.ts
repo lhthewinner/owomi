@@ -6,6 +6,8 @@ import {
   signupSchema,
   loginSchema,
   forgotPasswordSchema,
+  resetPasswordSchema,
+  type ResetPasswordInput,
   type SignupInput,
   type LoginInput,
   type ForgotPasswordInput,
@@ -47,7 +49,7 @@ export async function signUpAction(
     },
   });
 
-  if (error) {
+    if (error) {
     // Si l'utilisateur existe déjà
     if (error.message.includes("User already registered") || error.code === "user_already_exists") {
       return { success: false, message: content.auth.errors.emailAlreadyUsed };
@@ -57,6 +59,16 @@ export async function signUpAction(
     }
     // Erreur de sécurité générique sans exposer de détails sensibles
     return { success: false, message: content.auth.errors.invalidCredentials };
+  }
+
+  // Si Supabase a directement créé une session active (confirmation par email non obligatoire)
+  if (authData.session) {
+    return {
+      success: true,
+      needsEmailVerification: false,
+      message: "Compte créé et connecté avec succès.",
+      data: authData.user,
+    };
   }
 
   // Si Supabase a envoyé un email de confirmation (cas nominal)
@@ -153,7 +165,8 @@ export async function signInAction(
  * Envoie un lien à usage unique par email.
  */
 export async function forgotPasswordAction(
-  data: ForgotPasswordInput
+  data: ForgotPasswordInput,
+  origin?: string
 ): Promise<AuthActionResult> {
   const parsed = forgotPasswordSchema.safeParse(data);
   if (!parsed.success) {
@@ -163,7 +176,14 @@ export async function forgotPasswordAction(
   const { email } = parsed.data;
   const supabase = await createServerSideClient();
 
-  const { error } = await supabase.auth.resetPasswordForEmail(email);
+  const siteOrigin = origin || process.env.NEXT_PUBLIC_SITE_URL || "";
+  const redirectTo = siteOrigin
+    ? `${siteOrigin}/auth/callback?next=reset-password`
+    : undefined;
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo,
+  });
 
   if (error) {
     if (error.message.includes("rate limit") || error.status === 429) {
@@ -175,6 +195,37 @@ export async function forgotPasswordAction(
   return {
     success: true,
     message: content.auth.success.resetLinkSent,
+  };
+}
+
+/**
+ * Définition d'un nouveau mot de passe suite à un mot de passe oublié ou modification (Story A3).
+ * Validation stricte côté serveur avec Zod (règle 6).
+ */
+export async function updatePasswordAction(
+  newPassword: string
+): Promise<AuthActionResult> {
+  const parsed = resetPasswordSchema.safeParse({ password: newPassword });
+  if (!parsed.success) {
+    const firstError = parsed.error.issues[0]?.message || content.auth.errors.passwordRuleFailed;
+    return { success: false, message: firstError };
+  }
+
+  const supabase = await createServerSideClient();
+  const { error } = await supabase.auth.updateUser({
+    password: newPassword,
+  });
+
+  if (error) {
+    if (error.message.includes("rate limit") || error.status === 429) {
+      return { success: false, message: content.auth.errors.rateLimitExceeded };
+    }
+    return { success: false, message: content.common.errorTitle };
+  }
+
+  return {
+    success: true,
+    message: content.auth.success.passwordUpdated,
   };
 }
 

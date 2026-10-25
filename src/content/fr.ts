@@ -46,6 +46,19 @@ export const content = {
     forgotSubtitle:
       "Saisissez votre adresse email : nous vous envoyons un lien à usage unique pour choisir un nouveau mot de passe.",
     btnSendResetLink: "Envoyer le lien",
+    resetTitle: "Nouveau mot de passe",
+    resetSubtitle: "Choisissez un nouveau mot de passe sécurisé pour votre compte.",
+    fieldNewPassword: "Nouveau mot de passe",
+    fieldConfirmPassword: "Confirmer le mot de passe",
+    placeholderNewPassword: "Votre nouveau mot de passe",
+    placeholderConfirmPassword: "Confirmez votre mot de passe",
+    btnSubmitResetPassword: "Enregistrer mon mot de passe",
+    signupVerification: {
+      title: "Vérifiez vos emails",
+      description:
+        "Un lien de confirmation vient d'être envoyé à votre adresse email. Cliquez dessus pour valider votre compte puis connectez-vous.",
+      goToLogin: "Aller à la connexion",
+    },
     pwRules: {
       minLength: "6 caractères minimum",
       uppercase: "Une majuscule",
@@ -59,6 +72,7 @@ export const content = {
       invalidCredentials: "Email ou mot de passe incorrect.",
       emailNotVerified: "Veuillez valider votre adresse email avant de vous connecter.",
       passwordRuleFailed: "Le mot de passe ne respecte pas tous les critères de sécurité.",
+      passwordsDoNotMatch: "Les deux mots de passe ne correspondent pas.",
       emailAlreadyUsed: "Cette adresse email est déjà utilisée.",
       rateLimitExceeded: "Trop de tentatives. Veuillez patienter un instant avant de réessayer.",
     },
@@ -67,6 +81,7 @@ export const content = {
         "Compte créé avec succès ! Un lien de confirmation a été envoyé à votre adresse email. Veuillez cliquer dessus pour activer votre compte avant de vous connecter.",
       resetLinkSent:
         "Si cette adresse est enregistrée, un lien de réinitialisation vous a été envoyé par email.",
+      passwordUpdated: "Votre mot de passe a été mis à jour avec succès !",
       accountDeleted:
         "Votre compte et toutes vos données ont été définitivement supprimés.",
     },

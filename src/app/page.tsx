@@ -6,6 +6,7 @@ import { content } from "@/content/fr";
 import { formatAmount } from "@/lib/utils/currency";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { ForgotPasswordCard } from "@/components/auth/ForgotPasswordCard";
+import { ResetPasswordCard } from "@/components/auth/ResetPasswordCard";
 import { DashboardView } from "@/components/dashboard/DashboardView";
 import { BottomNav, type NavTab } from "@/components/navigation/BottomNav";
 import {
@@ -26,7 +27,7 @@ import { PinUnlockScreen } from "@/components/auth/PinUnlockScreen";
 import { hasPinConfigured, removePin, clearAllLocalPins } from "@/lib/auth/pin";
 import type { User } from "@supabase/supabase-js";
 
-type ActiveView = "welcome" | "auth" | "forgot" | "authenticated";
+type ActiveView = "welcome" | "auth" | "forgot" | "reset-password" | "authenticated";
 
 export default function HomePage() {
   const [isDark, setIsDark] = useState<boolean>(false);
@@ -73,6 +74,9 @@ export default function HomePage() {
       } else if (viewParam === "forgot") {
         setCurrentUser(null);
         setView("forgot");
+        return;
+      } else if (viewParam === "reset-password") {
+        setView("reset-password");
         return;
       } else if (viewParam === "welcome") {
         setCurrentUser(null);
@@ -167,7 +171,23 @@ export default function HomePage() {
 
     // Vérification d'une session existante (persistance hors ligne via getSession)
     const supabase = createClient();
+    const isRecoveryMode =
+      urlParams.get("view") === "reset-password" ||
+      (typeof window !== "undefined" && window.location.hash.includes("type=recovery"));
+
+    if (isRecoveryMode) {
+      setView("reset-password");
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (isRecoveryMode) {
+        if (session?.user) {
+          setCurrentUser(session.user);
+        }
+        setView("reset-password");
+        return;
+      }
+
       if (session?.user) {
         localStorage.setItem("owomi_cached_user", JSON.stringify(session.user));
         setCurrentUser(session.user);
@@ -185,7 +205,21 @@ export default function HomePage() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (_event === "PASSWORD_RECOVERY") {
+        if (session?.user) {
+          setCurrentUser(session.user);
+        }
+        setView("reset-password");
+        return;
+      }
+
       if (session?.user) {
+        if (
+          urlParams.get("view") === "reset-password" ||
+          (typeof window !== "undefined" && window.location.hash.includes("type=recovery"))
+        ) {
+          return;
+        }
         localStorage.setItem("owomi_cached_user", JSON.stringify(session.user));
         setCurrentUser(session.user);
         setView("authenticated");
@@ -444,6 +478,24 @@ export default function HomePage() {
                   window.history.back();
                 } else {
                   navigateToView("auth", "login");
+                }
+              }}
+            />
+          </div>
+        )}
+
+        {/* 3 bis. ÉCRAN NOUVEAU MOT DE PASSE (RÉINITIALISATION VIA EMAIL) */}
+        {view === "reset-password" && (
+          <div className="p-6 sm:p-8 max-w-md mx-auto w-full my-auto">
+            <ResetPasswordCard
+              onBack={() => {
+                navigateToView("welcome");
+              }}
+              onSuccess={() => {
+                setToastMessage(content.auth.success.passwordUpdated);
+                setView("authenticated");
+                if (typeof window !== "undefined") {
+                  window.history.replaceState({ view: "authenticated", activeTab: "dashboard" }, "");
                 }
               }}
             />

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Loader2, Calendar } from "lucide-react";
-import { DEFAULT_CATEGORIES } from "@/lib/constants/categories";
+import { X, Check, Loader2, Calendar, ChevronDown } from "lucide-react";
+import { DEFAULT_CATEGORIES, getCategoryIcon } from "@/lib/constants/categories";
 import { getTodayDateString, generateLocalId } from "@/lib/utils/date";
 import {
   createPlannedExpenseAction,
@@ -30,7 +30,8 @@ export function PlannedExpenseModal({
 }: PlannedExpenseModalProps) {
   const [name, setName] = useState<string>("");
   const [amountStr, setAmountStr] = useState<string>("");
-  const [category, setCategory] = useState<string>("Logement");
+  const [category, setCategory] = useState<string>("Aucune");
+  const SelectedCatIcon = getCategoryIcon(category);
   const [period, setPeriod] = useState<"day" | "week" | "month">("month");
   const [startDate, setStartDate] = useState<string>(() => getTodayDateString(userTimezone));
   const [isRecurring, setIsRecurring] = useState<boolean>(false);
@@ -51,7 +52,7 @@ export function PlannedExpenseModal({
     } else {
       setName("");
       setAmountStr("");
-      setCategory("Logement");
+      setCategory("Aucune");
       setPeriod("month");
       setStartDate(getTodayDateString(userTimezone));
       setIsRecurring(false);
@@ -237,29 +238,28 @@ export function PlannedExpenseModal({
 
           {/* Catégorie */}
           <div>
-            <label className="block text-xs font-semibold text-muted mb-1.5">
+            <label htmlFor="plannedCat" className="block text-xs font-semibold text-muted mb-1">
               Catégorie *
             </label>
-            <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-              {DEFAULT_CATEGORIES.map((cat) => {
-                const IconComponent = cat.icon;
-                const isSelected = category === cat.name;
-                return (
-                  <button
-                    key={cat.name}
-                    type="button"
-                    onClick={() => setCategory(cat.name)}
-                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap border transition-all touch-target ${
-                      isSelected
-                        ? "bg-primary/15 border-primary text-primary"
-                        : "bg-card border-line text-muted hover:text-foreground"
-                    }`}
-                  >
-                    <IconComponent className="w-3 h-3" />
-                    <span>{cat.name}</span>
-                  </button>
-                );
-              })}
+            <div className="relative">
+              <div className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-primary">
+                <SelectedCatIcon className="w-4 h-4" />
+              </div>
+              <select
+                id="plannedCat"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-line bg-card text-foreground text-xs font-semibold outline-none focus:border-primary transition-colors touch-target appearance-none cursor-pointer"
+              >
+                {DEFAULT_CATEGORIES.map((cat) => (
+                  <option key={cat.name} value={cat.name}>
+                    {cat.name === "Aucune" ? "Aucune (par défaut)" : cat.name}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-3.5 flex items-center text-muted">
+                <ChevronDown className="w-4 h-4" />
+              </div>
             </div>
           </div>
 
