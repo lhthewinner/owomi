@@ -25,6 +25,7 @@ import { createClient } from "@/lib/supabase/client";
 import { signOutAction } from "@/lib/auth/actions";
 import { PinUnlockScreen } from "@/components/auth/PinUnlockScreen";
 import { hasPinConfigured, removePin, clearAllLocalPins } from "@/lib/auth/pin";
+import { getUserDisplayName } from "@/lib/utils/user";
 import type { User } from "@supabase/supabase-js";
 
 type ActiveView = "welcome" | "auth" | "forgot" | "reset-password" | "authenticated";
@@ -83,10 +84,16 @@ export default function HomePage() {
         setView("welcome");
         return;
       } else if (viewParam === "pin") {
+        const customFirstname =
+          (typeof window !== "undefined" && localStorage.getItem("owomi_user_firstname")) ||
+          "";
+        const customName =
+          (typeof window !== "undefined" && localStorage.getItem("owomi_user_name")) ||
+          "";
         setCurrentUser({
           id: "demo-user-id",
-          email: "alex@owomi.app",
-          user_metadata: { name: "Alex" },
+          email: "demo@owomi.app",
+          user_metadata: { firstname: customFirstname, name: customName },
           app_metadata: {},
           aud: "authenticated",
           created_at: new Date().toISOString(),
@@ -102,14 +109,29 @@ export default function HomePage() {
 
       if (isDemo) {
         document.cookie = "asoro_demo=true; path=/";
-        setCurrentUser({
+        const customFirstname =
+          (typeof window !== "undefined" && localStorage.getItem("owomi_user_firstname")) ||
+          "";
+        const customName =
+          (typeof window !== "undefined" && localStorage.getItem("owomi_user_name")) ||
+          "";
+        const demoUser = {
           id: "demo-user-id",
           email: "test@owomi.app",
-          user_metadata: { name: "Testeur", firstname: "Alex" },
+          user_metadata: {
+            firstname: customFirstname,
+            name: customName,
+          },
           app_metadata: {},
           aud: "authenticated",
           created_at: new Date().toISOString(),
-        } as User);
+        } as User;
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem("owomi_cached_user", JSON.stringify(demoUser));
+          } catch {}
+        }
+        setCurrentUser(demoUser);
         setView("authenticated");
         setIsPinUnlocked(urlParams.get("lockPin") !== "1");
 
@@ -253,7 +275,8 @@ export default function HomePage() {
       const state = e.state;
       if (!state) return;
       const isUserConnected =
-        typeof window !== "undefined" && !!localStorage.getItem("owomi_cached_user");
+        typeof window !== "undefined" &&
+        (!!localStorage.getItem("owomi_cached_user") || document.cookie.includes("asoro_demo=true"));
 
       if (isUserConnected) {
         // Un utilisateur connecté reste toujours dans l'espace connecté
@@ -306,6 +329,12 @@ export default function HomePage() {
     clearAllLocalPins();
     setIsPinUnlocked(false);
     localStorage.removeItem("owomi_cached_user");
+    localStorage.removeItem("owomi_user_firstname");
+    localStorage.removeItem("owomi_user_name");
+    if (currentUser?.id) {
+      localStorage.removeItem(`owomi_user_firstname_${currentUser.id}`);
+      localStorage.removeItem(`owomi_user_name_${currentUser.id}`);
+    }
     try {
       sessionStorage.clear();
     } catch {}
@@ -324,6 +353,12 @@ export default function HomePage() {
     clearAllLocalPins();
     setIsPinUnlocked(false);
     localStorage.removeItem("owomi_cached_user");
+    localStorage.removeItem("owomi_user_firstname");
+    localStorage.removeItem("owomi_user_name");
+    if (currentUser?.id) {
+      localStorage.removeItem(`owomi_user_firstname_${currentUser.id}`);
+      localStorage.removeItem(`owomi_user_name_${currentUser.id}`);
+    }
     try {
       sessionStorage.clear();
     } catch {}
@@ -336,6 +371,31 @@ export default function HomePage() {
     setActiveTab("dashboard");
     setToastMessage(content.auth.success.accountDeleted);
   };
+
+  const effectiveUser: User | null = currentUser
+    ? ({
+        ...currentUser,
+        user_metadata: {
+          ...currentUser.user_metadata,
+          firstname:
+            (typeof window !== "undefined" &&
+              (localStorage.getItem(`owomi_user_firstname_${currentUser.id}`) ||
+                (localStorage.getItem("owomi_user_firstname")?.toLowerCase() !== "alex"
+                  ? localStorage.getItem("owomi_user_firstname")
+                  : ""))) ||
+            currentUser.user_metadata?.firstname ||
+            "",
+          name:
+            (typeof window !== "undefined" &&
+              (localStorage.getItem(`owomi_user_name_${currentUser.id}`) ||
+                (localStorage.getItem("owomi_user_name")?.toLowerCase() !== "testeur"
+                  ? localStorage.getItem("owomi_user_name")
+                  : ""))) ||
+            currentUser.user_metadata?.name ||
+            "",
+        },
+      } as User)
+    : null;
 
   return (
     <main className="min-h-screen bg-background text-foreground flex flex-col items-center justify-start transition-colors duration-200">
@@ -450,10 +510,16 @@ export default function HomePage() {
                   document.cookie = "asoro_demo=true; path=/";
                 }
                 if (!currentUser) {
+                  const customFirstname =
+                    (typeof window !== "undefined" && localStorage.getItem("owomi_user_firstname")) ||
+                    "";
+                  const customName =
+                    (typeof window !== "undefined" && localStorage.getItem("owomi_user_name")) ||
+                    "";
                   setCurrentUser({
                     id: "demo-user-id",
                     email: "test@owomi.app",
-                    user_metadata: { name: "Testeur", firstname: "Alex" },
+                    user_metadata: { name: customName, firstname: customFirstname },
                     app_metadata: {},
                     aud: "authenticated",
                     created_at: new Date().toISOString(),
@@ -503,21 +569,17 @@ export default function HomePage() {
         )}
 
         {/* 4. ÉCRAN CONNECTÉ AVEC ONGLETS (OU DÉVERROUILLAGE PIN) */}
-        {view === "authenticated" && currentUser && (
-          (hasPinConfigured(currentUser.id) ||
+        {view === "authenticated" && effectiveUser && (
+          (hasPinConfigured(effectiveUser.id) ||
             (typeof window !== "undefined" &&
               new URLSearchParams(window.location.search).get("view") === "pin")) &&
           !isPinUnlocked ? (
             <PinUnlockScreen
-              userId={currentUser.id}
-              userName={
-                currentUser.user_metadata?.firstname ||
-                currentUser.user_metadata?.name ||
-                "vous"
-              }
+              userId={effectiveUser.id}
+              userName={getUserDisplayName(effectiveUser).firstName}
               onUnlocked={() => setIsPinUnlocked(true)}
               onForgotPin={() => {
-                removePin(currentUser.id);
+                removePin(effectiveUser.id);
                 setIsPinUnlocked(false);
                 handleLogout();
               }}
@@ -526,7 +588,7 @@ export default function HomePage() {
             <div className="flex flex-col h-full justify-between">
               {/* Bandeau d'état de synchronisation hors ligne (Story O2 & règle 7) */}
               <SyncStatusBanner
-                userId={currentUser.id}
+                userId={effectiveUser.id}
                 onSyncComplete={() => setRefreshTrigger((t) => t + 1)}
                 refreshTrigger={refreshTrigger}
               />
@@ -535,7 +597,7 @@ export default function HomePage() {
             <div className="p-5 sm:p-6 flex-1">
               {activeTab === "dashboard" && (
                 <DashboardView
-                  currentUser={currentUser}
+                  currentUser={effectiveUser}
                   isDark={isDark}
                   onToggleTheme={toggleTheme}
                   onOpenAdd={() => {
@@ -578,7 +640,7 @@ export default function HomePage() {
 
               {activeTab === "profile" && (
                 <ProfileView
-                  currentUser={currentUser}
+                  currentUser={effectiveUser}
                   isDark={isDark}
                   onToggleTheme={toggleTheme}
                   onBack={() => {
@@ -601,6 +663,7 @@ export default function HomePage() {
 
               {activeTab === "bilan" && (
                 <BalanceView
+                  currentUser={effectiveUser}
                   onShowToast={(msg) => setToastMessage(msg)}
                   refreshTrigger={refreshTrigger}
                   initialPeriod={balancePeriod}
@@ -637,7 +700,7 @@ export default function HomePage() {
         {/* 5. Feuille d'ajout rapide (QuickAddSheet) */}
         <QuickAddSheet
           isOpen={isAddOpen}
-          userId={currentUser?.id}
+          userId={effectiveUser?.id}
           initialMode={addMode}
           initialPlannedExpenseId={payPlannedId}
           onClose={() => {

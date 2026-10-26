@@ -1,32 +1,52 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Download, Loader2, AlertCircle, FileText } from "lucide-react";
+import { Download, Loader2, AlertCircle } from "lucide-react";
 import { content } from "@/content/fr";
 import { shiftDate, getTodayDateString } from "@/lib/utils/date";
+import { getUserDisplayName } from "@/lib/utils/user";
 import {
   getBalanceDataAction,
   type BalanceDataResponse,
 } from "@/lib/operations/actions";
 import type { PeriodType } from "@/lib/balance/calculator";
+import type { User } from "@supabase/supabase-js";
 import { BalanceHeader } from "./BalanceHeader";
 import { BalanceHeroCard } from "./BalanceHeroCard";
 import { BalanceLoansCard } from "./BalanceLoansCard";
 import { BalancePlannedVsUnplanned } from "./BalancePlannedVsUnplanned";
 import { BalanceEvolutionChart } from "./BalanceEvolutionChart";
 import { BalanceCategoryBreakdown } from "./BalanceCategoryBreakdown";
+import { BalanceReportModal } from "./BalanceReportModal";
 
 interface BalanceViewProps {
+  currentUser?: User | null;
   onShowToast: (message: string) => void;
   refreshTrigger?: number;
   initialPeriod?: PeriodType;
 }
 
 export function BalanceView({
+  currentUser,
   onShowToast,
   refreshTrigger = 0,
   initialPeriod = "day",
 }: BalanceViewProps) {
+  const cachedUser =
+    typeof window !== "undefined"
+      ? (() => {
+          try {
+            const raw = localStorage.getItem("owomi_cached_user");
+            return raw ? JSON.parse(raw) : null;
+          } catch {
+            return null;
+          }
+        })()
+      : null;
+
+  const targetUser = currentUser || cachedUser;
+  const { fullName: userName } = getUserDisplayName(targetUser);
+
   const [period, setPeriod] = useState<PeriodType>(initialPeriod);
   const [referenceDate, setReferenceDate] = useState<string>("");
   const [data, setData] = useState<BalanceDataResponse | null>(() => {
@@ -205,6 +225,7 @@ export function BalanceView({
 
           {/* 7. Bouton Rapport PDF (avec mention V1.1) */}
           <button
+            type="button"
             onClick={() => setIsPdfModalOpen(true)}
             className="w-full py-3.5 px-4 rounded-2xl bg-card border border-line shadow-sm text-foreground font-bold text-xs flex items-center justify-center gap-2 hover:bg-card2 transition-colors touch-target"
           >
@@ -214,39 +235,15 @@ export function BalanceView({
         </>
       )}
 
-      {/* Modal d'information sur le rapport PDF (prévu en V1.1 selon cahier des charges) */}
-      {isPdfModalOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="pdf-modal-title"
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn"
-        >
-          <div className="bg-card w-full max-w-sm rounded-3xl p-6 border border-line shadow-2xl space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto">
-              <FileText className="w-6 h-6" />
-            </div>
-
-            <div className="text-center space-y-1.5">
-              <h3 id="pdf-modal-title" className="text-base font-extrabold text-foreground">
-                {content.balance.generatePdfBtn}
-              </h3>
-              <p className="text-xs text-muted leading-relaxed">
-                {content.balance.pdfV11Notice}
-              </p>
-            </div>
-
-            <button
-              onClick={() => {
-                setIsPdfModalOpen(false);
-                onShowToast("Rapport PDF : disponible en V1.1");
-              }}
-              className="btn font-bold text-xs"
-            >
-              Compris
-            </button>
-          </div>
-        </div>
+      {/* Modal du rapport PDF */}
+      {isPdfModalOpen && data && (
+        <BalanceReportModal
+          isOpen={isPdfModalOpen}
+          data={data}
+          userName={userName}
+          onClose={() => setIsPdfModalOpen(false)}
+          onShowToast={onShowToast}
+        />
       )}
     </div>
   );

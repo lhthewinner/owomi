@@ -13,11 +13,20 @@ import {
   AlertTriangle,
   BarChart3,
   User as UserIcon,
+  Bell,
+  X,
 } from "lucide-react";
 import { content } from "@/content/fr";
 import { formatAmount } from "@/lib/utils/currency";
-import { formatDateFrench } from "@/lib/utils/date";
+import { formatDateFrench, getTodayDateString } from "@/lib/utils/date";
+import { getUserDisplayName } from "@/lib/utils/user";
 import { getCategoryIcon } from "@/lib/constants/categories";
+import {
+  getNotificationSettings,
+  saveNotificationSettings,
+  shouldTriggerDailyReminder,
+  sendBrowserReminderNotification,
+} from "@/lib/notifications/reminder";
 import {
   getDashboardDataAction,
   deleteExpenseAction,
@@ -70,6 +79,30 @@ export function DashboardView({
   });
   const [deletingOp, setDeletingOp] = useState<RecentOperation | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [showDailyReminder, setShowDailyReminder] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!data) return;
+    const settings = getNotificationSettings();
+    const today = getTodayDateString();
+    const hasExpensesToday = (data.todaySpent || 0) > 0;
+
+    if (shouldTriggerDailyReminder(settings, hasExpensesToday, today)) {
+      setShowDailyReminder(true);
+      sendBrowserReminderNotification(
+        content.profile.dailyReminderTitle,
+        content.profile.dailyReminderBody
+      );
+      saveNotificationSettings({
+        ...settings,
+        lastNotifiedDate: today,
+      });
+    }
+  }, [data]);
+
+  const handleDismissReminder = () => {
+    setShowDailyReminder(false);
+  };
 
   const loadData = useCallback(async () => {
     // Si aucune donnée n'est encore présente, on affiche le loader
@@ -131,10 +164,7 @@ export function DashboardView({
     }
   };
 
-  const userName =
-    currentUser.user_metadata?.firstname ||
-    currentUser.email?.split("@")[0] ||
-    "Ami";
+  const { firstName: userName } = getUserDisplayName(currentUser);
 
   if (loading && !data) {
     return (
@@ -179,6 +209,42 @@ export function DashboardView({
           </button>
         </div>
       </div>
+
+      {/* Bannière Rappel de fin de journée si rien saisi aujourd'hui */}
+      {showDailyReminder && (
+        <div className="bg-primary/10 border border-primary/20 rounded-2xl p-3.5 flex items-start justify-between gap-3 animate-fadeIn">
+          <div className="flex items-start gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-primary/20 text-primary flex items-center justify-center shrink-0 mt-0.5">
+              <Bell className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-foreground">
+                {content.profile.dailyReminderTitle}
+              </div>
+              <div className="text-[11px] text-muted leading-tight mt-0.5">
+                {content.profile.dailyReminderBody}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={onOpenAdd}
+              className="px-2.5 py-1 rounded-lg bg-primary text-white text-[11px] font-bold hover:opacity-90 shadow-xs"
+            >
+              {content.profile.dailyReminderBannerBtn}
+            </button>
+            <button
+              type="button"
+              onClick={handleDismissReminder}
+              aria-label={content.common.close}
+              className="p-1 rounded-lg text-muted hover:text-foreground touch-target"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 2. Hero Card : Reste ce mois-ci (négatif possible sans blocage) */}
       <div

@@ -1083,6 +1083,71 @@ export async function updateCurrencyAction(currency: string): Promise<OperationR
 }
 
 /**
+ * Mise à jour du prénom et du nom de l'utilisateur (Profil & Affichage).
+ */
+export async function updateProfileNameAction(data: {
+  firstname: string;
+  name?: string;
+}): Promise<OperationResult> {
+  const cleanFirstname = data.firstname.trim();
+  const cleanName = (data.name || "").trim();
+
+  if (!cleanFirstname) {
+    return { success: false, message: "Le prénom est obligatoire." };
+  }
+
+  const supabase = await createServerSideClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    if (await isDemoSession()) {
+      try {
+        const cookieStore = await cookies();
+        cookieStore.set("asoro_demo_firstname", cleanFirstname, {
+          path: "/",
+          httpOnly: true,
+          sameSite: "lax",
+        });
+        if (cleanName) {
+          cookieStore.set("asoro_demo_name", cleanName, {
+            path: "/",
+            httpOnly: true,
+            sameSite: "lax",
+          });
+        }
+      } catch {}
+      return { success: true };
+    }
+    return { success: false, message: content.auth.errors.invalidCredentials };
+  }
+
+  const [profileRes] = await Promise.all([
+    supabase
+      .from("profiles")
+      .update({
+        firstname: cleanFirstname,
+        name: cleanName,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", user.id),
+    supabase.auth.updateUser({
+      data: {
+        firstname: cleanFirstname,
+        name: cleanName,
+      },
+    }),
+  ]);
+
+  if (profileRes.error) {
+    return { success: false, message: "Impossible de mettre à jour le profil." };
+  }
+
+  return { success: true };
+}
+
+/**
  * Récupération des préférences utilisateur (devise, thème, fuseau horaire, salaire).
  */
 export async function getProfilePreferencesAction(): Promise<
@@ -1091,6 +1156,8 @@ export async function getProfilePreferencesAction(): Promise<
     timezone: string;
     theme: string;
     monthlySalary: number;
+    firstname?: string;
+    name?: string;
   }>
 > {
   const supabase = await createServerSideClient();
@@ -1101,9 +1168,13 @@ export async function getProfilePreferencesAction(): Promise<
   if (!user) {
     if (await isDemoSession()) {
       let demoCurrency = "FCFA";
+      let demoFirstname = "";
+      let demoName = "";
       try {
         const cookieStore = await cookies();
         demoCurrency = cookieStore.get("asoro_demo_currency")?.value || "FCFA";
+        demoFirstname = cookieStore.get("asoro_demo_firstname")?.value || "";
+        demoName = cookieStore.get("asoro_demo_name")?.value || "";
       } catch {}
       return {
         success: true,
@@ -1112,6 +1183,8 @@ export async function getProfilePreferencesAction(): Promise<
           timezone: "Africa/Porto-Novo",
           theme: "light",
           monthlySalary: 250000,
+          firstname: demoFirstname,
+          name: demoName,
         },
       };
     }
@@ -1120,7 +1193,7 @@ export async function getProfilePreferencesAction(): Promise<
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("currency, timezone, theme, monthly_salary")
+    .select("currency, timezone, theme, monthly_salary, firstname, name")
     .eq("id", user.id)
     .single();
 
@@ -1131,6 +1204,8 @@ export async function getProfilePreferencesAction(): Promise<
       timezone: profile?.timezone || "Africa/Porto-Novo",
       theme: profile?.theme || "light",
       monthlySalary: profile?.monthly_salary || 0,
+      firstname: profile?.firstname || user.user_metadata?.firstname || "",
+      name: profile?.name || user.user_metadata?.name || "",
     },
   };
 }
